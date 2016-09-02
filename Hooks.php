@@ -1031,8 +1031,13 @@ class EchoHooks {
 		return true;
 	}
 
-	public static function onOutputPageCheckLastModified( array &$modifiedTimes, OutputPage $out ) {
-		$user = $out->getUser();
+	public static function onOutputPageCheckLastModified( array &$modifiedTimes, $out = null) {
+		global $wgUser;
+		if(!$out) {
+			$user = $wgUser;
+		} else {
+			$user = $out->getUser();
+		}
 		if ( $user->isLoggedIn() ) {
 			$notifUser = MWEchoNotifUser::newFromUser( $user );
 			$lastUpdate = $notifUser->getGlobalUpdateTime();
