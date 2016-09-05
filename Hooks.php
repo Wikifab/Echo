@@ -707,7 +707,9 @@ class EchoHooks {
 			$user = $wgUser;
 		}
 
-		$revid = $linksUpdate->getRevision() ? $linksUpdate->getRevision()->getId() : null;
+		// method $linksUpdate->getRevision() do not exists anymore
+		//$revid = $linksUpdate->getRevision() ? $linksUpdate->getRevision()->getId() : null;
+		$revid = null;
 
 		// link notification is boundless as you can include infinite number of links in a page
 		// db insert is expensive, limit it to a reasonable amount, we can increase this limit
