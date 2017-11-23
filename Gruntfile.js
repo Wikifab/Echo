@@ -1,40 +1,39 @@
-/*jshint node:true */
+/* eslint-env node */
 module.exports = function ( grunt ) {
-	grunt.loadNpmTasks( 'grunt-contrib-jshint' );
-	grunt.loadNpmTasks( 'grunt-contrib-watch' );
-	grunt.loadNpmTasks( 'grunt-jsonlint' );
+	var conf = grunt.file.readJSON( 'extension.json' );
+
 	grunt.loadNpmTasks( 'grunt-banana-checker' );
-	grunt.loadNpmTasks( 'grunt-jscs' );
+	grunt.loadNpmTasks( 'grunt-contrib-watch' );
+	grunt.loadNpmTasks( 'grunt-eslint' );
+	grunt.loadNpmTasks( 'grunt-jsonlint' );
+	grunt.loadNpmTasks( 'grunt-stylelint' );
 
 	grunt.initConfig( {
-		jshint: {
-			options: {
-				jshintrc: true,
-				ignores: [
-					'tests/externals/**'
-				]
-			},
-			all: [
+		eslint: {
+			src: [
 				'**/*.js',
 				'!node_modules/**',
-				'!docs/**'
-			]
-		},
-		jscs: {
-			src: [
-				'<%= jshint.all %>',
+				'!vendor/**',
 				'!tests/externals/**',
 				'!docs/**'
 			]
 		},
-		banana: {
-			all: 'i18n/'
+		// Lint – Styling
+		stylelint: {
+			options: {
+				syntax: 'less'
+			},
+			all: [
+				'modules/**/*.css',
+				'modules/**/*.less'
+			]
 		},
+		banana: conf.MessagesDirs,
 		watch: {
 			files: [
-				'.{csslintrc,jscsrc,jshintignore,jshintrc}',
-				'<%= jshint.all %>',
-				'<%= csslint.all %>'
+				'.{stylelintrc,eslintrc.json}',
+				'<%= eslint.all %>',
+				'<%= stylelint.all %>'
 			],
 			tasks: 'test'
 		},
@@ -47,7 +46,7 @@ module.exports = function ( grunt ) {
 		}
 	} );
 
-	grunt.registerTask( 'lint', [ 'jshint', 'jscs', 'jsonlint', 'banana' ] );
+	grunt.registerTask( 'lint', [ 'eslint', 'stylelint', 'jsonlint', 'banana' ] );
 	grunt.registerTask( 'test', 'lint' );
 	grunt.registerTask( 'default', 'test' );
 };

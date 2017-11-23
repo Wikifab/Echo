@@ -1,4 +1,5 @@
 <?php
+use MediaWiki\MediaWikiServices;
 
 /**
  * Database factory class, this will determine whether to use the main database
@@ -47,9 +48,9 @@ class MWEchoDbFactory {
 	protected function getLB() {
 		// Use the external db defined for Echo
 		if ( $this->cluster ) {
-			$lb = wfGetLBFactory()->getExternalLB( $this->cluster );
+			$lb = MediaWikiServices::getInstance()->getDBLoadBalancerFactory()->getExternalLB( $this->cluster );
 		} else {
-			$lb = wfGetLB();
+			$lb = MediaWikiServices::getInstance()->getDBLoadBalancer();
 		}
 
 		return $lb;
@@ -60,9 +61,9 @@ class MWEchoDbFactory {
 	 */
 	protected function getSharedLB() {
 		if ( $this->sharedCluster ) {
-			$lb = wfGetLBFactory()->getExternalLB( $this->sharedCluster );
+			$lb = MediaWikiServices::getInstance()->getDBLoadBalancerFactory()->getExternalLB( $this->sharedCluster );
 		} else {
-			$lb = wfGetLB();
+			$lb = MediaWikiServices::getInstance()->getDBLoadBalancer();
 		}
 
 		return $lb;
@@ -72,26 +73,24 @@ class MWEchoDbFactory {
 	 * Get the database connection for Echo
 	 * @param $db int Index of the connection to get
 	 * @param $groups mixed Query groups.
-	 * @return DatabaseBase
+	 * @return IDatabase
 	 */
-	public function getEchoDb( $db, $groups = array() ) {
+	public function getEchoDb( $db, $groups = [] ) {
 		return $this->getLB()->getConnection( $db, $groups );
 	}
 
 	/**
 	 * @param $db int Index of the connection to get
 	 * @param array $groups Query groups
-	 * @return bool|DatabaseBase false if no shared db is configured
+	 * @return bool|IDatabase false if no shared db is configured
 	 */
-	public function getSharedDb( $db, $groups = array() ) {
+	public function getSharedDb( $db, $groups = [] ) {
 		if ( !$this->shared ) {
 			return false;
 		}
 
 		return $this->getSharedLB()->getConnection( $db, $groups, $this->shared );
 	}
-
-
 
 	/**
 	 * Wrapper function for wfGetDB, some extensions like MobileFrontend is
@@ -103,16 +102,22 @@ class MWEchoDbFactory {
 	 * @param $db int Index of the connection to get
 	 * @param $groups mixed Query groups.
 	 * @param $wiki string|bool The wiki ID, or false for the current wiki
-	 * @return DatabaseBase
+	 * @return IDatabase
 	 */
-	public static function getDB( $db, $groups = array(), $wiki = false ) {
+	public static function getDB( $db, $groups = [], $wiki = false ) {
 		global $wgEchoCluster;
+
+		$services = MediaWikiServices::getInstance();
 
 		// Use the external db defined for Echo
 		if ( $wgEchoCluster ) {
-			$lb = wfGetLBFactory()->getExternalLB( $wgEchoCluster, $wiki );
+			$lb = $services->getDBLoadBalancerFactory()->getExternalLB( $wgEchoCluster, $wiki );
 		} else {
-			$lb = wfGetLB( $wiki );
+			if ( $wiki === false ) {
+				$lb = $services->getDBLoadBalancer();
+			} else {
+				$lb = $services->getDBLoadBalancerFactory()->getMainLB( $wiki );
+			}
 		}
 
 		return $lb->getConnection( $db, $groups, $wiki );
@@ -132,11 +137,11 @@ class MWEchoDbFactory {
 	 * @return array
 	 */
 	public function getMasterPosition() {
-		$position = array(
+		$position = [
 			'wikiDb' => false,
 			'echoDb' => false,
-		);
-		$lb = wfGetLB();
+		];
+		$lb = MediaWikiServices::getInstance()->getDBLoadBalancer();
 		if ( $lb->getServerCount() > 1 ) {
 			$position['wikiDb'] = $lb->getMasterPos();
 		};
@@ -152,7 +157,7 @@ class MWEchoDbFactory {
 	}
 
 	/**
-	 * Recieves the output of self::getMasterPosition. Waits
+	 * Receives the output of self::getMasterPosition. Waits
 	 * for slaves to catch up to the master position at that
 	 * point.
 	 *
@@ -160,7 +165,7 @@ class MWEchoDbFactory {
 	 */
 	public function waitFor( array $position ) {
 		if ( $position['wikiDb'] ) {
-			wfGetLB()->waitFor( $position['wikiDb'] );
+			MediaWikiServices::getInstance()->getDBLoadBalancer()->waitFor( $position['wikiDb'] );
 		}
 		if ( $position['echoDb'] ) {
 			$this->getLB()->waitFor( $position['echoDb'] );

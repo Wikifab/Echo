@@ -20,6 +20,10 @@ class EchoMentionStatusPresentationModel extends EchoEventPresentationModel {
 		return 'mention-failure';
 	}
 
+	public function canRender() {
+		return (bool)$this->event->getTitle();
+	}
+
 	public function getHeaderMessage() {
 		if ( $this->isTooManyMentionsFailure() ) {
 			$msg = $this->getMessageWithAgent( 'notification-header-mention-failure-too-many' );
@@ -76,18 +80,18 @@ class EchoMentionStatusPresentationModel extends EchoEventPresentationModel {
 	}
 
 	public function getPrimaryLink() {
-		return array(
+		return [
 			// Need FullURL so the section is included
 			'url' => $this->getTitleWithSection()->getFullURL(),
 			'label' => $this->msg( 'notification-link-text-view-mention-failure' )
 				->numParams( $this->getBundleCount() )
 				->text()
-		);
+		];
 	}
 
 	public function getSecondaryLinks() {
 		if ( $this->isBundled() ) {
-			return false;
+			return [];
 		}
 
 		$talkPageLink = $this->getPageLink(
@@ -96,7 +100,7 @@ class EchoMentionStatusPresentationModel extends EchoEventPresentationModel {
 			true
 		);
 
-		return array( $talkPageLink );
+		return [ $talkPageLink ];
 	}
 
 	public function isMentionSuccessEvent( EchoEvent $event ) {
@@ -116,7 +120,8 @@ class EchoMentionStatusPresentationModel extends EchoEventPresentationModel {
 	}
 
 	private function isTooManyMentionsFailure() {
-		return $this->getType() === 'mention-failure-too-many';
+		return $this->getFailureType() === 'too-many' ||
+			$this->getType() === 'mention-failure-too-many';
 	}
 
 	private function getMaxMentions() {
@@ -125,7 +130,7 @@ class EchoMentionStatusPresentationModel extends EchoEventPresentationModel {
 	}
 
 	private function getBundleSuccessCount() {
-		return $this->getBundleCount( false, array( $this, 'isMentionSuccessEvent' ) );
+		return $this->getBundleCount( false, [ $this, 'isMentionSuccessEvent' ] );
 	}
 
 	private function isMixedBundle() {

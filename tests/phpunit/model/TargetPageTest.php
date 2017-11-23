@@ -5,23 +5,6 @@ class EchoTargetPageTest extends MediaWikiTestCase {
 	public function testCreate() {
 		$this->assertNull(
 			EchoTargetPage::create(
-				User::newFromId( 0 ),
-				$this->mockTitle( 1 ),
-				$this->mockEchoEvent()
-			)
-		);
-
-		$this->assertNull(
-			EchoTargetPage::create(
-				User::newFromId( 1 ),
-				$this->mockTitle( 0 ),
-				$this->mockEchoEvent()
-			)
-		);
-
-		$this->assertNull(
-			EchoTargetPage::create(
-				User::newFromId( 0 ),
 				$this->mockTitle( 0 ),
 				$this->mockEchoEvent()
 			)
@@ -30,7 +13,6 @@ class EchoTargetPageTest extends MediaWikiTestCase {
 		$this->assertInstanceOf(
 			'EchoTargetPage',
 			EchoTargetPage::create(
-				User::newFromId( 1 ),
 				$this->mockTitle( 1 ),
 				$this->mockEchoEvent()
 			)
@@ -38,11 +20,10 @@ class EchoTargetPageTest extends MediaWikiTestCase {
 	}
 
 	public function testNewFromRow() {
-		$row = (object)array(
-			'etp_user' => 1,
+		$row = (object)[
 			'etp_page' => 2,
 			'etp_event' => 3
-		);
+		];
 		$obj = EchoTargetPage::newFromRow( $row );
 		$this->assertInstanceOf( 'EchoTargetPage', $obj );
 
@@ -53,10 +34,9 @@ class EchoTargetPageTest extends MediaWikiTestCase {
 	 * @expectedException MWException
 	 */
 	public function testNewFromRowWithException() {
-		$row = (object)array(
-			'etp_page' => 2,
+		$row = (object)[
 			'etp_event' => 3
-		);
+		];
 		$this->assertInstanceOf( 'EchoTargetPage', EchoTargetPage::newFromRow( $row ) );
 	}
 
@@ -66,7 +46,11 @@ class EchoTargetPageTest extends MediaWikiTestCase {
 	public function testToDbArray( $obj ) {
 		$row = $obj->toDbArray();
 		$this->assertTrue( is_array( $row ) );
-		$this->assertArrayHasKey( 'etp_user', $row );
+
+		// Not very common to assert that a field does _not_ exist
+		// but since we are explicitly removing it, it seems to make sense.
+		$this->assertArrayNotHasKey( 'etp_user', $row );
+
 		$this->assertArrayHasKey( 'etp_page', $row );
 		$this->assertArrayHasKey( 'etp_event', $row );
 	}

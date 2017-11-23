@@ -36,7 +36,7 @@ class EchoContainmentSet {
 	/**
 	 * @var EchoContainmentList[]
 	 */
-	protected $lists = array();
+	protected $lists = [];
 
 	/**
 	 * Add an EchoContainmentList to the set of lists checked by self::contains()
@@ -156,15 +156,18 @@ class EchoOnWikiList implements EchoContainmentList {
 	 */
 	public function getValues() {
 		if ( !$this->title ) {
-			return array();
+			return [];
 		}
 
 		$article = WikiPage::newFromID( $this->title->getArticleId() );
 		if ( $article === null || !$article->exists() ) {
-			return array();
+			return [];
 		}
-
-		return array_filter( array_map( 'trim', explode( "\n", $article->getText() ) ) );
+		$text = ContentHandler::getContentText( $article->getContent() );
+		if ( $text === null ) {
+			return [];
+		}
+		return array_filter( array_map( 'trim', explode( "\n", $text ) ) );
 	}
 
 	/**

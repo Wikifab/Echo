@@ -30,7 +30,7 @@
 
 		this.name = config.name || 'local';
 		this.source = config.source || 'local';
-		this.sourceURL = config.sourceURL;
+		this.sourceURL = config.sourceURL || '';
 		this.title = config.title || '';
 		this.fallbackTimestamp = config.timestamp || 0;
 
@@ -68,7 +68,7 @@
 
 	/**
 	 * @event update
-	 * @param {mw.echo.dm.NotificationItem} items Current items in the list
+	 * @param {mw.echo.dm.NotificationItem[]} items Current items in the list
 	 *
 	 * The list has been updated
 	 */
@@ -182,15 +182,6 @@
 	};
 
 	/**
-	 * Get the name associated with this list.
-	 *
-	 * @return {string} List name
-	 */
-	mw.echo.dm.NotificationsList.prototype.getName = function () {
-		return this.name;
-	};
-
-	/**
 	 * Get the source article url associated with this list.
 	 *
 	 * @return {string} List source article url
@@ -254,6 +245,19 @@
 	};
 
 	/**
+	 * Set all notifications to seen
+	 *
+	 * @param {string} timestamp New seen timestamp
+	 */
+	mw.echo.dm.NotificationsList.prototype.updateSeenState = function ( timestamp ) {
+		this.getItems().forEach( function ( notification ) {
+			notification.toggleSeen(
+				notification.isRead() || notification.getTimestamp() < timestamp
+			);
+		} );
+	};
+
+	/**
 	 * @inheritdoc
 	 */
 	mw.echo.dm.NotificationsList.prototype.isGroup = function () {
@@ -264,4 +268,4 @@
 		return this.getSource() !== 'local';
 	};
 
-} )( mediaWiki );
+}( mediaWiki ) );

@@ -1,4 +1,4 @@
-( function ( mw ) {
+( function ( mw, $ ) {
 	/**
 	 * Notifications list widget.
 	 * All of its items must be of the mw.echo.ui.NotificationItem type.
@@ -71,6 +71,16 @@
 
 	OO.inheritClass( mw.echo.ui.NotificationsListWidget, mw.echo.ui.SortedListWidget );
 
+	/* Events */
+
+	/**
+	 * @event modified
+	 *
+	 * The content of this list has changed.
+	 * This event is to state that not only has the content changed
+	 * but the actual DOM has been manipulated.
+	 */
+
 	/* Methods */
 
 	mw.echo.ui.NotificationsListWidget.prototype.onModelManagerDiscard = function ( modelName ) {
@@ -90,6 +100,8 @@
 				}
 			}
 		}
+
+		this.emit( 'modified' );
 	};
 
 	/**
@@ -99,10 +111,12 @@
 	 *
 	 * @param {Object} models Object of new models to populate the
 	 *  list.
+	 * @fires modified
 	 */
 	mw.echo.ui.NotificationsListWidget.prototype.resetDataFromModel = function ( models ) {
-		var i, modelId, model, subItems, subItem,
-			itemWidgets = [];
+		var i, modelId, model, subItems, subItem, widget,
+			itemWidgets = [],
+			$elements = $();
 
 		// Detach all attached models
 		for ( modelId in this.models ) {
@@ -118,17 +132,17 @@
 			if ( model.isGroup() ) {
 				if ( model.isForeign() ) {
 					// One Widget to Rule Them All
-					itemWidgets.push( new mw.echo.ui.CrossWikiNotificationItemWidget(
+					widget = new mw.echo.ui.CrossWikiNotificationItemWidget(
 						this.controller,
 						model,
 						{
 							$overlay: this.$overlay,
 							animateSorting: this.animated
 						}
-					) );
+					);
 				} else {
 					// local bundle
-					itemWidgets.push( new mw.echo.ui.BundleNotificationItemWidget(
+					widget = new mw.echo.ui.BundleNotificationItemWidget(
 						this.controller,
 						model,
 						{
@@ -136,30 +150,40 @@
 							bundle: false,
 							animateSorting: this.animated
 						}
-					) );
+					);
 				}
+				itemWidgets.push( widget );
+				$elements = $elements.add( widget.$element );
 			} else {
 				subItems = model.getItems();
 				// Separate widgets per item
 				for ( i = 0; i < subItems.length; i++ ) {
 					subItem = subItems[ i ];
-					itemWidgets.push( new mw.echo.ui.SingleNotificationItemWidget(
+					widget = new mw.echo.ui.SingleNotificationItemWidget(
 						this.controller,
 						subItem,
 						{
 							$overlay: this.$overlay,
 							bundle: false
 						}
-					) );
+					);
+					itemWidgets.push( widget );
+					$elements = $elements.add( widget.$element );
 				}
 			}
 		}
 
 		// Reset the current items and re-add the new item widgets
 		this.clearItems();
+
+		// fire render hook
+		mw.hook( 'ext.echo.notifications.beforeRender' ).fire( this.$element, $elements );
+
 		this.addItems( itemWidgets );
 
 		this.checkForEmptyNotificationsList();
+
+		this.emit( 'modified' );
 	};
 
 	/**
@@ -187,6 +211,7 @@
 	 *
 	 * @param {string} [label] Label for the option widget
 	 * @param {string} [link] Link for the option widget
+	 * @fires modified
 	 */
 	mw.echo.ui.NotificationsListWidget.prototype.resetLoadingOption = function ( label, link ) {
 		this.loadingOptionWidget.setLabel( label || '' );
@@ -194,6 +219,7 @@
 		if ( this.isEmpty() ) {
 			this.addItems( [ this.loadingOptionWidget ] );
 		}
+		this.emit( 'modified' );
 	};
 
 	/**
@@ -215,4 +241,4 @@
 			itemWidgets[ i ].resetInitiallyUnseen();
 		}
 	};
-} )( mediaWiki );
+}( mediaWiki, jQuery ) );

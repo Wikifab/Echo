@@ -4,7 +4,7 @@
 	/*!
 	 * Echo Special:Notifications page initialization
 	 */
-	$( document ).ready( function () {
+	$( function () {
 		var specialPageContainer,
 			limitNotifications = 50,
 			links = mw.config.get( 'wgNotificationsSpecialPageLinks' ),
@@ -14,6 +14,7 @@
 			modelManager = new mw.echo.dm.ModelManager( unreadCounter, {
 				type: [ 'message', 'alert' ],
 				itemsPerPage: limitNotifications,
+				readState: mw.config.get( 'wgEchoReadState' ),
 				localCounter: new mw.echo.dm.UnreadNotificationCounter(
 					echoApi,
 					[ 'message', 'alert' ],
@@ -24,10 +25,7 @@
 					}
 				)
 			} ),
-			controller = new mw.echo.Controller(
-				echoApi,
-				modelManager
-			);
+			controller = new mw.echo.Controller( echoApi, modelManager );
 
 		// Set default max prioritized action links per item.
 		// For general purpose we have 2, for mobile only 1
@@ -50,4 +48,4 @@
 		// Notifications
 		$content.empty().append( specialPageContainer.$element );
 	} );
-} )( jQuery, mediaWiki );
+}( jQuery, mediaWiki ) );

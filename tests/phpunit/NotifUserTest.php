@@ -1,4 +1,5 @@
 <?php
+use MediaWiki\MediaWikiServices;
 
 /**
  * @group Echo
@@ -6,13 +7,15 @@
 class MWEchoNotifUserTest extends MediaWikiTestCase {
 
 	/**
-	 * @var BagOStuff
+	 * @var WANObjectCache
 	 */
 	private $cache;
 
 	protected function setUp() {
 		parent::setUp();
-		$this->cache = ObjectCache::getMainStashInstance();
+		$this->cache = new WANObjectCache( [
+			'cache' => MediaWikiServices::getInstance()->getMainObjectStash(),
+		] );
 	}
 
 	public function testNewFromUser() {
@@ -31,21 +34,21 @@ class MWEchoNotifUserTest extends MediaWikiTestCase {
 	}
 
 	public function testFlagCacheWithNewTalkNotification() {
-		$notifUser = MWEchoNotifUser::newFromUser( User::newFromId( 2 ) );
+		$notifUser = $this->newNotifUser();
 
 		$notifUser->flagCacheWithNewTalkNotification();
 		$this->assertEquals( '1', $this->cache->get( $notifUser->getTalkNotificationCacheKey() ) );
 	}
 
 	public function testFlagCacheWithNoTalkNotification() {
-		$notifUser = MWEchoNotifUser::newFromUser( User::newFromId( 2 ) );
+		$notifUser = $this->newNotifUser();
 
 		$notifUser->flagCacheWithNoTalkNotification();
 		$this->assertEquals( '0', $this->cache->get( $notifUser->getTalkNotificationCacheKey() ) );
 	}
 
 	public function testNotifCountHasReachedMax() {
-		$notifUser = MWEchoNotifUser::newFromUser( User::newFromId( 2 ) );
+		$notifUser = $this->newNotifUser();
 
 		if ( $notifUser->getLocalNotificationCount() > MWEchoNotifUser::MAX_BADGE_COUNT ) {
 			$this->assertTrue( $notifUser->notifCountHasReachedMax() );
@@ -55,7 +58,7 @@ class MWEchoNotifUserTest extends MediaWikiTestCase {
 	}
 
 	public function testClearTalkNotification() {
-		$notifUser = MWEchoNotifUser::newFromUser( User::newFromId( 2 ) );
+		$notifUser = $this->newNotifUser();
 
 		$notifUser->flagCacheWithNewTalkNotification();
 
@@ -83,22 +86,22 @@ class MWEchoNotifUserTest extends MediaWikiTestCase {
 		$notifUser = new MWEchoNotifUser(
 			User::newFromId( 2 ),
 			$this->cache,
-			$this->mockEchoUserNotificationGateway( array( 'markRead' => true ) ),
+			$this->mockEchoUserNotificationGateway( [ 'markRead' => true ] ),
 			$this->mockEchoNotificationMapper(),
 			$this->mockEchoTargetPageMapper()
 		);
-		$this->assertFalse( $notifUser->markRead( array() ) );
-		$this->assertTrue( $notifUser->markRead( array( 1 ) ) );
+		$this->assertFalse( $notifUser->markRead( [] ) );
+		$this->assertTrue( $notifUser->markRead( [ 1 ] ) );
 
 		$notifUser = new MWEchoNotifUser(
 			User::newFromId( 2 ),
 			$this->cache,
-			$this->mockEchoUserNotificationGateway( array( 'markRead' => false ) ),
+			$this->mockEchoUserNotificationGateway( [ 'markRead' => false ] ),
 			$this->mockEchoNotificationMapper(),
 			$this->mockEchoTargetPageMapper()
 		);
-		$this->assertFalse( $notifUser->markRead( array() ) );
-		$this->assertFalse( $notifUser->markRead( array( 1 ) ) );
+		$this->assertFalse( $notifUser->markRead( [] ) );
+		$this->assertFalse( $notifUser->markRead( [ 1 ] ) );
 	}
 
 	public function testMarkAllRead() {
@@ -106,8 +109,8 @@ class MWEchoNotifUserTest extends MediaWikiTestCase {
 		$notifUser = new MWEchoNotifUser(
 			User::newFromId( 2 ),
 			$this->cache,
-			$this->mockEchoUserNotificationGateway( array( 'markRead' => true ) ),
-			$this->mockEchoNotificationMapper( array( $this->mockEchoNotification() ) ),
+			$this->mockEchoUserNotificationGateway( [ 'markRead' => true ] ),
+			$this->mockEchoNotificationMapper( [ $this->mockEchoNotification() ] ),
 			$this->mockEchoTargetPageMapper()
 		);
 		$this->assertTrue( $notifUser->markAllRead() );
@@ -116,8 +119,8 @@ class MWEchoNotifUserTest extends MediaWikiTestCase {
 		$notifUser = new MWEchoNotifUser(
 			User::newFromId( 2 ),
 			$this->cache,
-			$this->mockEchoUserNotificationGateway( array( 'markRead' => false ) ),
-			$this->mockEchoNotificationMapper( array( $this->mockEchoNotification() ) ),
+			$this->mockEchoUserNotificationGateway( [ 'markRead' => false ] ),
+			$this->mockEchoNotificationMapper( [ $this->mockEchoNotification() ] ),
 			$this->mockEchoTargetPageMapper()
 		);
 		$this->assertFalse( $notifUser->markAllRead() );
@@ -126,7 +129,7 @@ class MWEchoNotifUserTest extends MediaWikiTestCase {
 		$notifUser = new MWEchoNotifUser(
 			User::newFromId( 2 ),
 			$this->cache,
-			$this->mockEchoUserNotificationGateway( array( 'markRead' => true ) ),
+			$this->mockEchoUserNotificationGateway( [ 'markRead' => true ] ),
 			$this->mockEchoNotificationMapper(),
 			$this->mockEchoTargetPageMapper()
 		);
@@ -136,17 +139,17 @@ class MWEchoNotifUserTest extends MediaWikiTestCase {
 		$notifUser = new MWEchoNotifUser(
 			User::newFromId( 2 ),
 			$this->cache,
-			$this->mockEchoUserNotificationGateway( array( 'markRead' => false ) ),
+			$this->mockEchoUserNotificationGateway( [ 'markRead' => false ] ),
 			$this->mockEchoNotificationMapper(),
 			$this->mockEchoTargetPageMapper()
 		);
 		$this->assertFalse( $notifUser->markAllRead() );
 	}
 
-	public function mockEchoUserNotificationGateway( array $dbResult = array() ) {
-		$dbResult += array(
+	public function mockEchoUserNotificationGateway( array $dbResult = [] ) {
+		$dbResult += [
 			'markRead' => true
-		);
+		];
 		$gateway = $this->getMockBuilder( 'EchoUserNotificationGateway' )
 			->disableOriginalConstructor()
 			->getMock();
@@ -157,7 +160,7 @@ class MWEchoNotifUserTest extends MediaWikiTestCase {
 		return $gateway;
 	}
 
-	public function mockEchoNotificationMapper( array $result = array() ) {
+	public function mockEchoNotificationMapper( array $result = [] ) {
 		$mapper = $this->getMockBuilder( 'EchoNotificationMapper' )
 			->disableOriginalConstructor()
 			->getMock();
@@ -168,7 +171,7 @@ class MWEchoNotifUserTest extends MediaWikiTestCase {
 		return $mapper;
 	}
 
-	public function mockEchoTargetPageMapper( array $result = array() ) {
+	public function mockEchoTargetPageMapper( array $result = [] ) {
 		$mapper = $this->getMockBuilder( 'EchoTargetPageMapper' )
 			->disableOriginalConstructor()
 			->getMock();
@@ -199,5 +202,15 @@ class MWEchoNotifUserTest extends MediaWikiTestCase {
 			->will( $this->returnValue( 1 ) );
 
 		return $event;
+	}
+
+	protected function newNotifUser() {
+		return new MWEchoNotifUser(
+			User::newFromId( 2 ),
+			$this->cache,
+			$this->mockEchoUserNotificationGateway(),
+			$this->mockEchoNotificationMapper(),
+			$this->mockEchoTargetPageMapper()
+		);
 	}
 }

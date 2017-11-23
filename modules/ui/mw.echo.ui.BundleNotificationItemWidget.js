@@ -69,6 +69,12 @@
 		// Events
 		this.toggleExpandButton.connect( this, { click: 'expand' } );
 
+		if ( !this.model.getPrimaryUrl() ) {
+			// If there's no primary link, make sure a click
+			// triggers the 'expand' action
+			this.$content.on( 'click', this.expand.bind( this ) );
+		}
+
 		// Initialization
 		this.populateFromModel();
 		this.toggleExpanded( false );
@@ -164,6 +170,8 @@
 		this.toggleExpanded( !this.expanded );
 		this.updateExpandButton();
 
+		this.$element.toggleClass( 'mw-echo-ui-bundleNotificationItemWidget-expanded', this.expanded );
+
 		if ( !this.expanded ) {
 			return;
 		}
@@ -216,4 +224,4 @@
 	mw.echo.ui.BundleNotificationItemWidget.prototype.getList = function () {
 		return this.listWidget;
 	};
-} )( mediaWiki, jQuery );
+}( mediaWiki, jQuery ) );

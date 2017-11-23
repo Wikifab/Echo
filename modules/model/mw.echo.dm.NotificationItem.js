@@ -1,5 +1,5 @@
 ( function ( mw, $ ) {
-	/*global moment:false */
+	/* global moment:false */
 	/**
 	 * Notification item data structure.
 	 *
@@ -56,7 +56,6 @@
 		this.foreign = !!config.foreign;
 		this.bundled = !!config.bundled;
 		this.source = config.source || '';
-		this.modelName = config.modelName || 'local';
 		this.iconType = config.iconType;
 		this.iconURL = config.iconURL;
 
@@ -199,7 +198,12 @@
 	 */
 	mw.echo.dm.NotificationItem.prototype.toggleSeen = function ( seen ) {
 		seen = seen !== undefined ? seen : !this.seen;
-		if ( this.seen !== seen ) {
+		if (
+			this.seen !== seen &&
+			// Do not change the state of a read item, since its
+			// seen state (never 'unseen') never changes
+			!this.isRead()
+		) {
 			this.seen = seen;
 			this.emit( 'update' );
 		}

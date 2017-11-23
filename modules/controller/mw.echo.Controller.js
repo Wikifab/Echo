@@ -1,20 +1,18 @@
 ( function ( mw, $ ) {
-	/*global moment:false */
+	/* global moment:false */
 	/**
 	 * Controller for Echo notifications
 	 *
 	 * @param {mw.echo.api.EchoApi} echoApi Echo API
 	 * @param {mw.echo.dm.ModelManager} manager Model manager
-	 * @param {Object} [config] Configuration
 	 */
-	mw.echo.Controller = function MwEchoController( echoApi, manager, config ) {
-		config = config || {};
-
+	mw.echo.Controller = function MwEchoController( echoApi, manager ) {
 		this.api = echoApi;
 		this.manager = manager;
 	};
 
 	/* Initialization */
+
 	OO.initClass( mw.echo.Controller );
 
 	/**
@@ -130,7 +128,7 @@
 			this.manager.getTypeString(),
 			currentSource,
 			{
-				continue: continueValue,
+				'continue': continueValue,
 				readState: filters.getReadState(),
 				titles: filters.getSourcePagesModel().getGroupedPagesForCurrentTitle()
 			}
@@ -158,8 +156,7 @@
 					// anyways.
 					maxSeenTime = data.seenTime.alert < data.seenTime.notice ?
 						data.seenTime.notice : data.seenTime.alert;
-					controller.manager.getSeenTimeModel().setSeenTimeForSource(
-						currentSource,
+					controller.manager.getSeenTimeModel().setSeenTime(
 						maxSeenTime
 					);
 
@@ -266,7 +263,7 @@
 			.then(
 				// Success
 				function ( data ) {
-					var i, notifData, content, newNotifData,
+					var i, notifData, newNotifData,
 						foreignListModel, source, itemModel,
 						allModels = { local: localListModel },
 						createBundledNotification = function ( modelName, rawBundledNotifData ) {
@@ -284,11 +281,9 @@
 					// Go over the data
 					for ( i = 0; i < data.list.length; i++ ) {
 						notifData = data.list[ i ];
-						content = notifData[ '*' ] || {};
 
 						// Set source's seenTime
-						controller.manager.getSeenTimeModel().setSeenTimeForSource(
-							'local',
+						controller.manager.getSeenTimeModel().setSeenTime(
 							controller.getTypes().length > 1 ?
 								(
 									data.seenTime.alert < data.seenTime.notice ?
@@ -315,7 +310,8 @@
 									notifData.sources[ source ]
 								);
 							}
-						} else if ( newNotifData.bundledNotifications ) {
+
+						} else if ( Array.isArray( newNotifData.bundledNotifications ) ) {
 							// local bundle
 							newNotifData.modelName = 'bundle_' + notifData.id;
 							itemModel = new mw.echo.dm.BundleNotificationItem(
@@ -333,6 +329,15 @@
 
 							idArray.push( notifData.id );
 							localItems.push( itemModel );
+
+							if ( newNotifData.bundledNotifications ) {
+								// This means that bundledNotifications is truthy
+								// but is not an array. We should log this in the console
+								mw.log.warn(
+									'newNotifData.bundledNotifications is expected to be an array,' +
+									'but instead received "' + $.type( newNotifData.bundledNotifications ) + '"'
+								);
+							}
 						}
 
 					}
@@ -368,7 +373,6 @@
 	 */
 	mw.echo.Controller.prototype.createNotificationData = function ( apiData ) {
 		var utcTimestamp, utcIsoMoment,
-			source = this.manager.getFiltersModel().getSourcePagesModel().getCurrentSource(),
 			content = apiData[ '*' ] || {};
 
 		if ( apiData.timestamp.utciso8601 ) {
@@ -388,7 +392,7 @@
 			read: !!apiData.read,
 			seen: (
 				!!apiData.read ||
-				utcTimestamp <= this.manager.getSeenTime( source )
+				utcTimestamp <= this.manager.getSeenTime()
 			),
 			timestamp: utcTimestamp,
 			category: apiData.category,
@@ -655,8 +659,6 @@
 		if ( !xwikiModel ) {
 			return $.Deferred().reject().promise();
 		}
-		this.manager.getUnreadCounter().estimateChange( -itemIds.length );
-
 		itemIds = Array.isArray( itemIds ) ? itemIds : [ itemIds ];
 
 		sourceModel = xwikiModel.getList().getGroupByName( source );
@@ -668,6 +670,7 @@
 		notifs.forEach( function ( notif ) {
 			allIds = allIds.concat( notif.getAllIds() );
 		} );
+		this.manager.getUnreadCounter().estimateChange( -allIds.length );
 		return this.api.markItemsRead( allIds, source, true )
 			.then( this.refreshUnreadCount.bind( this ) );
 	};
@@ -692,8 +695,7 @@
 			.then( function ( groupList ) {
 				var i, listModel, group, groupItems,
 					promises = [],
-					idArray = [],
-					itemCounter = 0;
+					idArray = [];
 
 				for ( group in groupList ) {
 					listModel = xwikiModel.getItemBySource( group );
@@ -703,7 +705,6 @@
 					for ( i = 0; i < groupItems.length; i++ ) {
 						idArray = idArray.concat( groupItems[ i ].id ).concat( groupItems[ i ].bundledIds || [] );
 					}
-					itemCounter += idArray.length;
 
 					// Mark items as read in the API
 					promises.push(
@@ -737,62 +738,23 @@
 	};
 
 	/**
-	 * Update seenTime for the given source
+	 * Update global seenTime for all sources
 	 *
 	 * @return {jQuery.Promise} A promise that is resolved when the
-	 *  seenTime was updated for all the controller's types.
+	 *  seenTime was updated for all the controller's types and sources.
 	 */
-	mw.echo.Controller.prototype.updateSeenTime = function ( source ) {
+	mw.echo.Controller.prototype.updateSeenTime = function () {
 		var controller = this;
 
-		return this.api.updateSeenTime( this.getTypes(), source )
+		return this.api.updateSeenTime(
+			this.getTypes(),
+			// For consistency, use current source, though seenTime
+			// will be updated globally
+			this.manager.getFiltersModel().getSourcePagesModel().getCurrentSource()
+		)
 			.then( function ( time ) {
-				controller.manager.getSeenTimeModel().setSeenTimeForSource( source, time );
+				controller.manager.getSeenTimeModel().setSeenTime( time );
 			} );
-	};
-
-	/**
-	 * Update local seen time
-	 *
-	 * @return {jQuery.Promise} A promise that is resolved when the
-	 *  seenTime was updated for all given types.
-	 */
-	mw.echo.Controller.prototype.updateLocalSeenTime = function () {
-		return this.updateSeenTime( 'local' );
-	};
-
-	/**
-	 * Update seen time for all sources within a cross-wiki bundle.
-	 *
-	 * @return {jQuery.Promise} A promise that is resolved when the
-	 *  seenTime was updated for all available cross-wiki sources.
-	 */
-	mw.echo.Controller.prototype.updateSeenTimeForCrossWiki = function () {
-		var model = this.manager.getNotificationModel( 'xwiki' ),
-			controller = this,
-			promises = [];
-
-		if ( !model ) {
-			// There is no xwiki notifications model
-			return $.Deferred().reject().promise();
-		}
-
-		model.getSourceNames().forEach( function ( source ) {
-			promises.push( controller.updateSeenTime( source ) );
-		} );
-
-		return mw.echo.api.NetworkHandler.static.waitForAllPromises( promises );
-	};
-	/**
-	 * Update seenTime for the currently selected source
-	 *
-	 * @return {jQuery.Promise} A promise that is resolved when the
-	 *  seenTime was updated for all given types.
-	 */
-	mw.echo.Controller.prototype.updateSeenTimeForCurrentSource = function () {
-		var currSource = this.manager.getFiltersModel().getSourcePagesModel().getCurrentSource();
-
-		return this.updateSeenTime( currSource );
 	};
 
 	/**
@@ -826,4 +788,4 @@
 	mw.echo.Controller.prototype.getTypeString = function () {
 		return this.manager.getTypeString();
 	};
-} )( mediaWiki, jQuery );
+}( mediaWiki, jQuery ) );

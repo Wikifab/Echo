@@ -49,10 +49,10 @@ class EchoAttributeManager {
 	 * Notifications are broken down to two sections, default is alert
 	 * @var array
 	 */
-	public static $sections = array(
+	public static $sections = [
 		self::ALERT,
 		self::MESSAGE
-	);
+	];
 
 	/**
 	 * Names for keys in $wgEchoNotifications notification config
@@ -126,22 +126,22 @@ class EchoAttributeManager {
 		if ( isset( $this->notifications[$type][$locator] ) ) {
 			return (array)$this->notifications[$type][$locator];
 		} else {
-			return array();
+			return [];
 		}
 	}
 
 	/**
 	 * Get the enabled events for a user, which excludes user-dismissed events
 	 * from the general enabled events
-	 * @param User
-	 * @param string web/email
+	 * @param User $user
+	 * @param string $notifyType Either "web" or "email".
 	 * @return string[]
 	 */
 	public function getUserEnabledEvents( User $user, $notifyType ) {
 		$eventTypesToLoad = $this->notifications;
 		foreach ( $eventTypesToLoad as $eventType => $eventData ) {
 			$category = $this->getNotificationCategory( $eventType );
-			// Make sure the user is eligible to recieve this type of notification
+			// Make sure the user is eligible to receive this type of notification
 			if ( !$this->getCategoryEligibility( $user, $category ) ) {
 				unset( $eventTypesToLoad[$eventType] );
 			}
@@ -155,14 +155,14 @@ class EchoAttributeManager {
 	}
 
 	/**
-	 * Get the uesr enabled events for the specified sections
-	 * @param User
-	 * @param string
-	 * @param string[]
+	 * Get the user enabled events for the specified sections
+	 * @param User $user
+	 * @param string $notifyType Either "web" or "email".
+	 * @param string[] $sections
 	 * @return string[]
 	 */
 	public function getUserEnabledEventsbySections( User $user, $notifyType, array $sections ) {
-		$events = array();
+		$events = [];
 		foreach ( $sections as $section ) {
 			$events = array_merge(
 				$events,
@@ -184,7 +184,7 @@ class EchoAttributeManager {
 	 * @return array Array of notification types in this section
 	 */
 	public function getEventsForSection( $section ) {
-		$events = array();
+		$events = [];
 
 		$isDefault = ( $section === self::$DEFAULT_SECTION );
 
@@ -222,7 +222,7 @@ class EchoAttributeManager {
 	}
 
 	/**
-	 * See if a user is eligible to recieve a certain type of notification
+	 * See if a user is eligible to receive a certain type of notification
 	 * (based on user groups, not user preferences)
 	 *
 	 * @param User
@@ -295,10 +295,10 @@ class EchoAttributeManager {
 	 * @return array Associative array with category as key
 	 */
 	public function getEventsByCategory() {
-		$eventsByCategory = array();
+		$eventsByCategory = [];
 
 		foreach ( $this->categories as $category => $categoryDetails ) {
-			$eventsByCategory[$category] = array();
+			$eventsByCategory[$category] = [];
 		}
 
 		foreach ( $this->notifications as $notificationType => $notificationDetails ) {

@@ -1,5 +1,7 @@
 <?php
 
+use MediaWiki\Logger\LoggerFactory;
+
 /**
  * Immutable class to represent an event.
  * In Echo nomenclature, an event is a single occurrence.
@@ -29,7 +31,7 @@ class EchoEvent extends EchoAbstractEntity implements Bundleable {
 	 */
 	protected $revision = null;
 
-	protected $extra = array();
+	protected $extra = [];
 
 	/**
 	 * Notification timestamp
@@ -74,7 +76,7 @@ class EchoEvent extends EchoAbstractEntity implements Bundleable {
 			throw new MWException( "Unable to serialize an uninitialized EchoEvent" );
 		}
 
-		return array( 'id', 'timestamp' );
+		return [ 'id', 'timestamp' ];
 	}
 
 	function __wakeup() {
@@ -97,7 +99,7 @@ class EchoEvent extends EchoAbstractEntity implements Bundleable {
 	 * @throws MWException
 	 * @return EchoEvent|bool false if aborted via hook or Echo DB is read-only
 	 */
-	public static function create( $info = array() ) {
+	public static function create( $info = [] ) {
 		global $wgEchoNotifications;
 
 		// Do not create event and notifications if write access is locked
@@ -108,7 +110,7 @@ class EchoEvent extends EchoAbstractEntity implements Bundleable {
 		}
 
 		$obj = new EchoEvent;
-		static $validFields = array( 'type', 'variant', 'agent', 'title', 'extra' );
+		static $validFields = [ 'type', 'variant', 'agent', 'title', 'extra' ];
 
 		if ( empty( $info['type'] ) ) {
 			throw new MWException( "'type' parameter is mandatory" );
@@ -155,14 +157,14 @@ class EchoEvent extends EchoAbstractEntity implements Bundleable {
 			throw new MWException( "Invalid user parameter" );
 		}
 
-		if ( !Hooks::run( 'BeforeEchoEventInsert', array( $obj ) ) ) {
+		if ( !Hooks::run( 'BeforeEchoEventInsert', [ $obj ] ) ) {
 			return false;
 		}
 
 		// @Todo - Database insert logic should not be inside the model
 		$obj->insert();
 
-		Hooks::run( 'EchoEventInsertComplete', array( $obj ) );
+		Hooks::run( 'EchoEventInsertComplete', [ $obj ] );
 
 		global $wgEchoUseJobQueue;
 
@@ -176,12 +178,12 @@ class EchoEvent extends EchoAbstractEntity implements Bundleable {
 	 * @return array
 	 */
 	public function toDbArray() {
-		$data = array(
+		$data = [
 			'event_type' => $this->type,
 			'event_variant' => $this->variant,
 			'event_deleted' => $this->deleted,
 			'event_extra' => $this->serializeExtra()
-		);
+		];
 		if ( $this->id ) {
 			$data['event_id'] = $this->id;
 		}
@@ -226,6 +228,44 @@ class EchoEvent extends EchoAbstractEntity implements Bundleable {
 	protected function insert() {
 		$eventMapper = new EchoEventMapper();
 		$this->id = $eventMapper->insert( $this );
+
+		$targetPages = self::resolveTargetPages( $this->getExtraParam( 'target-page' ) );
+		if ( $targetPages ) {
+			$targetMapper = new EchoTargetPageMapper();
+			foreach ( $targetPages as $title ) {
+				$targetPage = EchoTargetPage::create( $title, $this );
+				if ( $targetPage ) {
+					$targetMapper->insert( $targetPage );
+				}
+			}
+		}
+	}
+
+	/**
+	 * @param int[]|int|false $targetPageIds
+	 * @return Title[]
+	 */
+	protected static function resolveTargetPages( $targetPageIds ) {
+		if ( !$targetPageIds ) {
+			return [];
+		}
+		if ( !is_array( $targetPageIds ) ) {
+			$targetPageIds = [ $targetPageIds ];
+		}
+		$result = [];
+		foreach ( $targetPageIds as $targetPageId ) {
+			// Make sure the target-page id is a valid id
+			$title = Title::newFromID( $targetPageId );
+			// Try master if there is no match
+			if ( !$title ) {
+				$title = Title::newFromID( $targetPageId, Title::GAID_FOR_UPDATE );
+			}
+			if ( $title ) {
+				$result[] = $title;
+			}
+		}
+
+		return $result;
 	}
 
 	/**
@@ -249,10 +289,15 @@ class EchoEvent extends EchoAbstractEntity implements Bundleable {
 
 		$this->variant = $row->event_variant;
 		try {
-			$this->extra = $row->event_extra ? unserialize( $row->event_extra ) : array();
+			$this->extra = $row->event_extra ? unserialize( $row->event_extra ) : [];
 		} catch ( Exception $e ) {
 			// T73489: unserializing can fail for old notifications
-			MWExceptionHandler::logException( $e );
+			LoggerFactory::getInstance( 'Echo' )->warning(
+				'Failed to unserialize event {id}',
+				[
+					'id' => $row->event_id
+				]
+			);
 			return false;
 		}
 		$this->pageId = $row->event_page_id;
@@ -352,7 +397,7 @@ class EchoEvent extends EchoAbstractEntity implements Bundleable {
 		} elseif ( is_null( $this->extra ) ) {
 			$extra = null;
 		} else {
-			$extra = serialize( array( $this->extra ) );
+			$extra = serialize( [ $this->extra ] );
 		}
 
 		return $extra;
@@ -371,7 +416,7 @@ class EchoEvent extends EchoAbstractEntity implements Bundleable {
 		if ( isset( $wgEchoNotificationCategories[$category]['no-dismiss'] ) ) {
 			$noDismiss = $wgEchoNotificationCategories[$category]['no-dismiss'];
 		} else {
-			$noDismiss = array();
+			$noDismiss = [];
 		}
 		if ( !in_array( $distribution, $noDismiss ) && !in_array( 'all', $noDismiss ) ) {
 			return true;

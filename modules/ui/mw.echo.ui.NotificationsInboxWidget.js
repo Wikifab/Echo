@@ -92,11 +92,40 @@
 		this.topPaginationWidget.connect( this, { change: 'populateNotifications' } );
 		this.bottomPaginationWidget.connect( this, { change: 'populateNotifications' } );
 		this.settingsMenu.connect( this, { markAllRead: 'onSettingsMarkAllRead' } );
+		$( window ).on( 'scroll resize', this.onWindowScroll.bind( this ) );
 
 		this.topPaginationWidget.setDisabled( true );
 		this.bottomPaginationWidget.setDisabled( true );
 
-		// Initialization
+		this.$topToolbar =
+			$( '<div>' )
+				.addClass( 'mw-echo-ui-notificationsInboxWidget-main-toolbar-top' )
+				.append(
+					$( '<div>' )
+						.addClass( 'mw-echo-ui-notificationsInboxWidget-row' )
+						.append(
+						$( '<div>' )
+							.addClass( 'mw-echo-ui-notificationsInboxWidget-main-toolbar-readState' )
+							.addClass( 'mw-echo-ui-notificationsInboxWidget-cell' )
+							.append( this.readStateSelectWidget.$element ),
+						$( '<div>' )
+							.addClass( 'mw-echo-ui-notificationsInboxWidget-cell-placeholder' ),
+						$( '<div>' )
+							.addClass( 'mw-echo-ui-notificationsInboxWidget-main-toolbar-pagination' )
+							.addClass( 'mw-echo-ui-notificationsInboxWidget-cell' )
+							.append( this.topPaginationWidget.$element ),
+						$( '<div>' )
+							.addClass( 'mw-echo-ui-notificationsInboxWidget-main-toolbar-settings' )
+							.addClass( 'mw-echo-ui-notificationsInboxWidget-cell' )
+							.append( this.settingsMenu.$element )
+					)
+				);
+
+		this.$toolbarWrapper =
+			$( '<div>' )
+				.addClass( 'mw-echo-ui-notificationsInboxWidget-toolbarWrapper' )
+				.append( this.$topToolbar );
+
 		$sidebar = $( '<div>' )
 			.addClass( 'mw-echo-ui-notificationsInboxWidget-sidebar' )
 			.append( this.xwikiUnreadWidget.$element );
@@ -104,43 +133,9 @@
 		$main = $( '<div>' )
 			.addClass( 'mw-echo-ui-notificationsInboxWidget-main' )
 			.append(
-				$( '<div>' )
-					.addClass( 'mw-echo-ui-notificationsInboxWidget-main-toolbar-top' )
-					.append(
-						$( '<div>' )
-							.addClass( 'mw-echo-ui-notificationsInboxWidget-row' )
-							.append(
-								$( '<div>' )
-									.addClass( 'mw-echo-ui-notificationsInboxWidget-main-toolbar-readState' )
-									.addClass( 'mw-echo-ui-notificationsInboxWidget-cell' )
-									.append( this.readStateSelectWidget.$element ),
-								$( '<div>' )
-									.addClass( 'mw-echo-ui-notificationsInboxWidget-cell-placeholder' ),
-								$( '<div>' )
-									.addClass( 'mw-echo-ui-notificationsInboxWidget-main-toolbar-pagination' )
-									.addClass( 'mw-echo-ui-notificationsInboxWidget-cell' )
-									.append( this.topPaginationWidget.$element ),
-								$( '<div>' )
-									.addClass( 'mw-echo-ui-notificationsInboxWidget-main-toolbar-settings' )
-									.addClass( 'mw-echo-ui-notificationsInboxWidget-cell' )
-									.append( this.settingsMenu.$element )
-							)
-					),
-				this.noticeMessageWidget.$element,
-				this.datedListWidget.$element,
-				$( '<div>' )
-					.addClass( 'mw-echo-ui-notificationsInboxWidget-main-toolbar-bottom' )
-					.append(
-						$( '<div>' )
-							.addClass( 'mw-echo-ui-notificationsInboxWidget-row' )
-							.append(
-								$( '<div>' )
-									.addClass( 'mw-echo-ui-notificationsInboxWidget-cell' )
-									.append(
-										this.bottomPaginationWidget.$element
-									)
-							)
-					)
+					this.$toolbarWrapper,
+					this.noticeMessageWidget.$element,
+					this.datedListWidget.$element
 			);
 
 		this.$element
@@ -159,6 +154,7 @@
 		this.updateReadStateSelectWidget();
 		this.xwikiUnreadWidget.populateSources();
 		this.populateNotifications();
+
 	};
 
 	/* Initialization */
@@ -243,9 +239,12 @@
 			.then(
 				// Success
 				function () {
+					// Fire initialization hook
+					mw.hook( 'ext.echo.special.onInitialize' ).fire( widget.controller.manager.getTypeString(), widget.controller );
+
 					widget.popPending();
 					// Update seen time
-					widget.controller.updateSeenTimeForCurrentSource();
+					widget.controller.updateSeenTime();
 				},
 				// Failure
 				function ( errObj ) {
@@ -321,4 +320,28 @@
 		this.noticeMessageWidget.toggle( displayMessage );
 		this.datedListWidget.toggle( !displayMessage );
 	};
-} )( jQuery, mediaWiki );
+
+	/**
+	 * Respond to window scroll
+	 */
+	mw.echo.ui.NotificationsInboxWidget.prototype.onWindowScroll = function () {
+		var scrollTop = $( window ).scrollTop(),
+			isScrolledDown = scrollTop >= this.$topToolbar.parent().offset().top;
+
+		// Fix the widget to the top when we scroll down below its original
+		// location
+		this.$topToolbar.toggleClass(
+			'mw-echo-ui-notificationsInboxWidget-main-toolbar-affixed',
+			isScrolledDown
+		);
+		if ( isScrolledDown ) {
+			// Copy width from parent, width: 100% doesn't do what we want when
+			// position: fixed; is set
+			this.$topToolbar.css( 'width', this.$topToolbar.parent().width() );
+		} else {
+			// Unset width when we no longer have position: fixed;
+			this.$topToolbar.css( 'width', '' );
+		}
+	};
+
+}( jQuery, mediaWiki ) );

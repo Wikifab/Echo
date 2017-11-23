@@ -4,7 +4,7 @@
 .client-js .mw-echo-special-nojs {
 	min-height: 5em;
 	/* @embed */
-	background-image: url(../../images/pending.gif);
+	background-image: url( ../../images/pending.gif );
 
 	.mw-echo-special-container {
 		display: none;
@@ -23,7 +23,7 @@
 	display: none;
 }
 
-@media all and ( min-width: @specialpage-mobile-width-medium ) {
+@media all and ( min-width: @specialpage-hd-width ) {
 	.client-js #mw-content-text {
 		margin-top: 2em;
 	}
@@ -40,28 +40,12 @@
 		height: 19px;
 		width: 19px;
 	}
-
-	#mw-echo-pref-link {
-		float: right;
-		margin: 5px 3px;
-		/* @embed */
-		background-image: url(../icons/Preferences.png);
-		background-repeat: no-repeat;
-		background-position: 0 0;
-		filter: alpha(opacity=50);
-		opacity: 0.5;
-
-		&:hover {
-			filter: alpha(opacity=100);
-			opacity: 1.0;
-		}
-	}
 }
 
 .mw-echo-date-section {
-	border-bottom: 1px solid #C9C9C9;
+	border-bottom: 1px solid @border-color;
 	margin: 20px 0 5px 0;
-	color: #686868;
+	color: @grey-light;
 	display: inline-block;
 	width: 100%;
 	padding-bottom: 0.5em;
@@ -93,7 +77,7 @@ ul.mw-echo-special-notifications {
 .mw-echo-special-navbar-bottom {
 	margin-top: 20px;
 	padding-top: 10px;
-	border-top: solid 1px #C9C9C9;
+	border-top: 1px solid @border-color;
 }
 
 .mw-echo-notification {
@@ -130,16 +114,16 @@ ul.mw-echo-special-notifications {
 	overflow-y: auto;
 
 	.mw-echo-notification {
-		background-color: #F1F1F1;
+		background-color: #f8f9fa;
 
 		&:hover {
 			/* Fallback for IE<=8 */
-			background-color: #F6F6F6;
-			background-color: rgba(0, 0, 0, 0.035);
+			background-color: #f6f6f6;
+			background-color: rgba( 0, 0, 0, 0.035 );
 		}
 
 		&-unread {
-			color: #252525;
+			color: @color-base;
 			background-color: transparent;
 			padding-right: 0;
 
@@ -165,7 +149,7 @@ div.mw-htmlform-ooui-wrapper {
 	margin: 0;
 }
 
-@media all and ( max-width: @specialpage-mobile-width-medium ) {
+@media all and ( max-width: ( @specialpage-hd-width - 1 ) ) {
 	.pre-content.heading-holder {
 		// Center 'preferences' in mobile special page
 		text-align: center;

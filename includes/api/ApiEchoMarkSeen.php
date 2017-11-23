@@ -8,7 +8,7 @@ class ApiEchoMarkSeen extends ApiBase {
 
 		$user = $this->getUser();
 		if ( $user->isAnon() ) {
-			$this->dieUsage( 'Login is required', 'login-required' );
+			$this->dieWithError( 'apierror-mustbeloggedin-generic', 'login-required' );
 		}
 
 		$params = $this->extractRequestParams();
@@ -20,35 +20,32 @@ class ApiEchoMarkSeen extends ApiBase {
 			$outputTimestamp = wfTimestamp( TS_ISO_8601, $timestamp );
 		} else {
 			// MW
-			$this->setWarning( 'The MW timestamp output format is deprecated' .
-				' here. In the future, ISO 8601 will always be used for ' .
-				'the output timestamp format.  Adjust your client and ' .
-				'set timestampFormat to \'ISO_8601\'.' );
+			$this->addDeprecation( 'apiwarn-echo-deprecation-timestampformat', 'action=echomarkseen&timestampFormat=MW' );
 
 			$outputTimestamp = $timestamp;
 		}
 
-		$this->getResult()->addValue( 'query', $this->getModuleName(), array(
+		$this->getResult()->addValue( 'query', $this->getModuleName(), [
 			'result' => 'success',
 			'timestamp' => $outputTimestamp,
-		) );
+		] );
 	}
 
 	public function getAllowedParams() {
-		return array(
-			'token' => array(
+		return [
+			'token' => [
 				ApiBase::PARAM_REQUIRED => true,
-			),
-			'type' => array(
+			],
+			'type' => [
 				ApiBase::PARAM_REQUIRED => true,
-				ApiBase::PARAM_TYPE => array( 'alert', 'message', 'all' ),
-			),
-			'timestampFormat' => array(
+				ApiBase::PARAM_TYPE => [ 'alert', 'message', 'all' ],
+			],
+			'timestampFormat' => [
 				// Not using the TS constants, since clients can't.
 				ApiBase::PARAM_DFLT => 'MW',
-				ApiBase::PARAM_TYPE => array( 'ISO_8601', 'MW' ),
-			),
-		);
+				ApiBase::PARAM_TYPE => [ 'ISO_8601', 'MW' ],
+			],
+		];
 	}
 
 	public function needsToken() {
@@ -71,9 +68,9 @@ class ApiEchoMarkSeen extends ApiBase {
 	 * @see ApiBase::getExamplesMessages()
 	 */
 	protected function getExamplesMessages() {
-		return array(
+		return [
 			'action=echomarkseen&type=all' => 'apihelp-echomarkseen-example-1',
-		);
+		];
 	}
 
 	public function getHelpUrls() {

@@ -1,6 +1,7 @@
 @import '../echo.variables';
 @import 'mediawiki.mixins';
 
+/* stylelint-disable no-descending-specificity */
 /* We have to include the #pt-notifications selector due to monobook */
 .mw-echo-notifications-badge {
 	#pt-notifications-alert &,
@@ -9,17 +10,17 @@
 		display: block;
 		width: 24px;
 		height: 24px;
-		top: -5px;
+		// Hide the text, but keep accessible for screen-readers
+		// Later we put the icons back onscreen with an opposite offset
+		top: -@badge-offscreen-offset - 5px;
 		cursor: pointer;
 		text-decoration: none;
-		// Hide the text, but keep accessible for screen-readers
-		color: transparent;
 
 		&:hover,
 		&:active,
 		&:focus {
-			outline: none;
-			-moz-outline-style: none;
+			outline: 0;
+			-moz-outline-style: 0;
 		}
 
 		&-dimmed {
@@ -34,8 +35,9 @@
 			opacity: 0.8;
 			content: '';
 			background-repeat: no-repeat;
+			// Bring it back onscreen
+			top: @badge-offscreen-offset;
 			left: 0;
-			top: 0;
 			width: 100%;
 			height: 100%;
 		}
@@ -45,22 +47,29 @@
 			position: absolute;
 			display: inline-block;
 			cursor: pointer;
-			top: 9px;
+			// Bring it back onscreen
+			top: @badge-offscreen-offset + 9px;
 			left: 55%;
 			font-size: 0.9em;
 			font-weight: bold;
 			padding: 0 0.3em;
-			border: 1px solid white;
+			border: 1px solid #fff;
 			border-radius: 2px;
 			background-color: @badge-counter-background-seen;
-			content: attr(data-counter-text);
-			color: white;
+			content: attr( data-counter-text );
+			color: #fff;
+		}
+
+		&.mw-echo-notifications-badge-long-label {
+			&:after {
+				left: 35%;
+			}
 		}
 
 		&.mw-echo-notifications-badge-all-read {
 			opacity: 0.625;
 
-			&::after {
+			&:after {
 				visibility: hidden;
 			}
 		}
@@ -69,14 +78,15 @@
 	#pt-notifications-alert & {
 		&:before {
 			/* @embed */
-			background-image: url('../icons/bell.svg');
+			background-image: url( ../icons/bell.svg );
 		}
 	}
 
 	#pt-notifications-notice & {
 		&:before {
 			/* @embed */
-			background-image: url('../icons/tray.svg');
+			background-image: url( ../icons/tray.svg );
 		}
 	}
 }
+/* stylelint-enable no-descending-specificity */

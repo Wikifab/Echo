@@ -21,6 +21,8 @@ class RemoveOrphanedEvents extends LoggedUpdateMaintenance {
 		$this->mDescription = "Remove rows from echo_event that don't have corresponding rows in echo_notification";
 
 		$this->setBatchSize( 500 );
+
+		$this->requireExtension( 'Echo' );
 	}
 
 	public function getUpdateKey() {
@@ -33,28 +35,28 @@ class RemoveOrphanedEvents extends LoggedUpdateMaintenance {
 		$dbr = $dbFactory->getEchoDb( DB_SLAVE );
 		$iterator = new BatchRowIterator(
 			$dbr,
-			array( 'echo_event', 'echo_notification' ),
+			[ 'echo_event', 'echo_notification' ],
 			'event_id',
 			$this->mBatchSize
 		);
-		$iterator->addJoinConditions( array(
-			'echo_notification' => array( 'LEFT JOIN', 'notification_event=event_id' )
-		) );
-		$iterator->addConditions( array(
+		$iterator->addJoinConditions( [
+			'echo_notification' => [ 'LEFT JOIN', 'notification_event=event_id' ]
+		] );
+		$iterator->addConditions( [
 			'notification_user' => null
-		) );
+		] );
 
 		$this->output( "Removing orphaned echo_event rows...\n" );
 
 		$processed = 0;
 		foreach ( $iterator as $batch ) {
-			$ids = array();
+			$ids = [];
 			foreach ( $batch as $row ) {
 				$ids[] = $row->event_id;
 			}
 			$dbw->delete(
 				'echo_event',
-				array( 'event_id' => $ids )
+				[ 'event_id' => $ids ]
 
 			);
 			$processed += $dbw->affectedRows();

@@ -70,7 +70,7 @@ class EchoNotification extends EchoAbstractEntity implements Bundleable {
 	 */
 	public static function create( array $info ) {
 		$obj = new EchoNotification();
-		static $validFields = array( 'event', 'user' );
+		static $validFields = [ 'event', 'user' ];
 
 		foreach ( $validFields as $field ) {
 			if ( isset( $info[$field] ) ) {
@@ -112,7 +112,7 @@ class EchoNotification extends EchoAbstractEntity implements Bundleable {
 		// Get the bundle key for this event if web bundling is enabled
 		$bundleKey = '';
 		if ( !empty( $wgEchoNotifications[$this->event->getType()]['bundle']['web'] ) ) {
-			Hooks::run( 'EchoGetBundleRules', array( $this->event, &$bundleKey ) );
+			Hooks::run( 'EchoGetBundleRules', [ $this->event, &$bundleKey ] );
 		}
 
 		if ( $bundleKey ) {
@@ -130,23 +130,7 @@ class EchoNotification extends EchoAbstractEntity implements Bundleable {
 			}
 		}
 
-		// Create a target page object if specified by event
-		$event = $this->event;
-		$user = $this->user;
-		$targetPages = self::resolveTargetPages( $event->getExtraParam( 'target-page' ) );
-		if ( $targetPages ) {
-			$notifMapper->attachListener( 'insert', 'add-target-page', function () use ( $event, $user, $targetPages ) {
-				$targetMapper = new EchoTargetPageMapper();
-				foreach ( $targetPages as $title ) {
-					$targetPage = EchoTargetPage::create( $user, $title, $event );
-					if ( $targetPage ) {
-						$targetMapper->insert( $targetPage );
-					}
-				}
-			} );
-		}
-
-		$notifUser = MWEchoNotifUser::newFromUser( $user );
+		$notifUser = MWEchoNotifUser::newFromUser( $this->user );
 		$section = $this->event->getSection();
 
 		// Add listener to refresh notification count upon insert
@@ -158,37 +142,11 @@ class EchoNotification extends EchoAbstractEntity implements Bundleable {
 
 		$notifMapper->insert( $this );
 
-		if ( $event->getType() === 'edit-user-talk' ) {
+		if ( $this->event->getCategory() === 'edit-user-talk' ) {
 			$notifUser->flagCacheWithNewTalkNotification();
+			$this->user->setNewtalk( true );
 		}
-		Hooks::run( 'EchoCreateNotificationComplete', array( $this ) );
-	}
-
-	/**
-	 * @param int[]|int|false $targetPageIds
-	 * @return Title[]
-	 */
-	protected static function resolveTargetPages( $targetPageIds ) {
-		if ( !$targetPageIds ) {
-			return array();
-		}
-		if ( !is_array( $targetPageIds ) ) {
-			$targetPageIds = array( $targetPageIds );
-		}
-		$result = array();
-		foreach ( $targetPageIds as $targetPageId ) {
-			// Make sure the target-page id is a valid id
-			$title = Title::newFromID( $targetPageId );
-			// Try master if there is no match
-			if ( !$title ) {
-				$title = Title::newFromID( $targetPageId, Title::GAID_FOR_UPDATE );
-			}
-			if ( $title ) {
-				$result[] = $title;
-			}
-		}
-
-		return $result;
+		Hooks::run( 'EchoCreateNotificationComplete', [ $this ] );
 	}
 
 	/**
@@ -231,7 +189,7 @@ class EchoNotification extends EchoAbstractEntity implements Bundleable {
 	 * @return array
 	 */
 	public function toDbArray() {
-		return array(
+		return [
 			'notification_event' => $this->event->getId(),
 			'notification_user' => $this->user->getId(),
 			'notification_timestamp' => $this->timestamp,
@@ -239,7 +197,7 @@ class EchoNotification extends EchoAbstractEntity implements Bundleable {
 			'notification_bundle_base' => $this->bundleBase,
 			'notification_bundle_hash' => $this->bundleHash,
 			'notification_bundle_display_hash' => $this->bundleDisplayHash
-		);
+		];
 	}
 
 	/**

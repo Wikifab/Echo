@@ -28,10 +28,10 @@ class EchoPlainTextEmailFormatter extends EchoEventFormatter {
 		// Footer
 		$text .= "\n\n{$this->getFooter()}";
 
-		return array(
+		return [
 			'body' => $text,
 			'subject' => $subject,
-		);
+		];
 	}
 
 	/**
@@ -40,7 +40,7 @@ class EchoPlainTextEmailFormatter extends EchoEventFormatter {
 	public function getFooter() {
 		global $wgEchoEmailFooterAddress;
 
-		$footerMsg = $this->msg( 'echo-email-plain-footer' )->text();
+		$footerMsg = $this->msg( 'echo-email-plain-footer', $this->user )->text();
 		$prefsUrl = SpecialPage::getTitleFor( 'Preferences', false, 'mw-prefsection-echo' )
 			->getFullURL( '', false, PROTO_CANONICAL );
 		$text = "--\n\n$footerMsg\n$prefsUrl";

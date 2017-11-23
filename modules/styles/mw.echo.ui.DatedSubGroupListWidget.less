@@ -1,33 +1,32 @@
 @import '../echo.variables';
 .mw-echo-ui-datedSubGroupListWidget {
-	// We have to reiterate the fixed width here so that the
-	// concatenation works inside the items. This is an issue
-	// with css' table-layout, which notification items are
-	// set to
-	width: @specialpage-width;
-
-	&-title {
-		font-weight: normal;
+	.mw-body-content &-title {
+		// Since the title is <h2> we want to specifically
+		// change the styling to bring it back to mimic a
+		// content span. We also must override the h2 rules
+		// so specificity is important
+		font-weight: inherit;
+		font-size: inherit;
+		font-family: inherit;
+		border: 0;
 
 		&-primary {
 			font-size: 1.5em;
 			margin-right: 0.5em;
 			display: inline-block;
-			&::first-letter {
+
+			&:first-letter {
 				text-transform: uppercase;
 			}
 		}
 
 		&-secondary {
 			font-size: 1.5em;
-			color: #777777;
+			color: @grey-light;
 		}
 	}
 
-	@media all and ( max-width: @specialpage-mobile-width-medium ) {
-		// Make narrow
-		width: @specialpage-mobile-width-small;
-
+	@media all and ( max-width: ( @specialpage-hd-width - 1 ) ) {
 		.mw-echo-ui-subGroupListWidget-header-row-markAllReadButton {
 			font-size: 0.8em;
 		}
@@ -39,10 +38,5 @@
 		&-title-secondary {
 			display: none;
 		}
-	}
-
-	@media all and ( max-width: @specialpage-mobile-width-small ) {
-		// Make narrow with margin
-		width: @specialpage-mobile-width-small - 32px;
 	}
 }

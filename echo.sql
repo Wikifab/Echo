@@ -23,11 +23,11 @@ CREATE TABLE /*_*/echo_notification (
 	notification_read_timestamp binary(14) null,
 	notification_bundle_base boolean not null default 1,
 	notification_bundle_hash varchar(32) binary not null, -- The hash for bundling notifications regardless of timestamp
-	notification_bundle_display_hash varchar(32) binary not null -- The hash for displaying bundle notifications with regard to timestamp, this is is a subset of notification_bundle_hash
+	notification_bundle_display_hash varchar(32) binary not null, -- The hash for displaying bundle notifications with regard to timestamp, this is is a subset of notification_bundle_hash
+	PRIMARY KEY (notification_user, notification_event)
 ) /*$wgDBTableOptions*/;
 
 CREATE INDEX /*i*/echo_user_timestamp ON /*_*/echo_notification (notification_user,notification_timestamp);
-CREATE UNIQUE INDEX /*i*/user_event ON /*_*/echo_notification (notification_user,notification_event);
 CREATE INDEX /*i*/echo_notification_user_base_read_timestamp ON /*_*/echo_notification (notification_user, notification_bundle_base, notification_read_timestamp);
 CREATE INDEX /*i*/echo_notification_user_base_timestamp ON /*_*/echo_notification (notification_user, notification_bundle_base, notification_timestamp, notification_event);
 CREATE INDEX /*i*/echo_notification_user_hash_timestamp ON /*_*/echo_notification (notification_user, notification_bundle_hash, notification_timestamp);
@@ -48,11 +48,9 @@ CREATE INDEX /*i*/echo_email_batch_user_hash_priority ON /*_*/echo_email_batch (
 
 CREATE TABLE /*_*/echo_target_page (
 	etp_id int unsigned not null primary key auto_increment,
-	etp_user int unsigned not null default 0,
 	etp_page int unsigned not null default 0,
 	etp_event int unsigned not null default 0
 ) /*$wgDBTableOptions*/;
 
-CREATE INDEX /*i*/echo_target_page_user_event ON /*_*/echo_target_page (etp_user, etp_event);
-CREATE INDEX /*i*/echo_target_page_user_page_event ON /*_*/echo_target_page (etp_user, etp_page, etp_event);
+CREATE INDEX /*i*/echo_target_page_event ON /*_*/echo_target_page (etp_event);
 CREATE INDEX /*i*/echo_target_page_page_event ON /*_*/echo_target_page (etp_page, etp_event);

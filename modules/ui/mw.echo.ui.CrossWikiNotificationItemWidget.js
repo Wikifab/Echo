@@ -299,7 +299,6 @@
 						}
 					}
 				)
-				.then( this.controller.updateSeenTimeForCrossWiki.bind( this.controller ) )
 				.always( this.popPending.bind( this ) );
 
 			// Only run the fetch notifications action once
@@ -315,7 +314,9 @@
 	mw.echo.ui.CrossWikiNotificationItemWidget.prototype.toggleExpanded = function ( show ) {
 		this.expanded = show !== undefined ? !!show : !this.expanded;
 
-		if ( show ) {
+		this.$element.toggleClass( 'mw-echo-ui-crossWikiNotificationItemWidget-expanded', this.expanded );
+
+		if ( this.expanded ) {
 			this.getList().$element.slideDown();
 		} else {
 			this.getList().$element.slideUp();
@@ -338,7 +339,7 @@
 					'notification-link-text-expand-' +
 						( type === 'message' ? 'notice' : type ) +
 						'-count',
-					this.model.getCount()
+					mw.language.convertNumber( this.model.getCount() )
 				)
 		);
 		this.toggleExpandButton.setIcon(
@@ -356,4 +357,4 @@
 	mw.echo.ui.CrossWikiNotificationItemWidget.prototype.getList = function () {
 		return this.listWidget;
 	};
-} )( mediaWiki, jQuery );
+}( mediaWiki, jQuery ) );

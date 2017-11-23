@@ -25,6 +25,7 @@
 	 * @cfg {string|string[]} [type="message"] The type of the notifications in
 	 *  the models that this manager handles.
 	 * @cfg {number} [itemsPerPage=25] Number of items per page
+	 * @cfg {string} [readState] Notifications read state. Pass through to mw.echo.dm.FiltersModel
 	 */
 	mw.echo.dm.ModelManager = function MwEchoDmModelManager( counter, config ) {
 		config = config || {};
@@ -45,7 +46,8 @@
 			itemsPerPage: config.itemsPerPage || 25
 		} );
 		this.filtersModel = new mw.echo.dm.FiltersModel( {
-			selectedSource: 'local'
+			selectedSource: 'local',
+			readState: config.readState
 		} );
 
 		// Events
@@ -107,16 +109,18 @@
 	/**
 	 * Respond to seen time change for a given source
 	 *
-	 * @param {string} source Source where seen time has changed
 	 * @param {string} timestamp Seen time, as a full UTC ISO 8601 timestamp
+	 * @fires seen
 	 */
-	mw.echo.dm.ModelManager.prototype.onSeenTimeUpdate = function ( source, timestamp ) {
-		var notifs = this.getNotificationsBySource( source );
-		notifs.forEach( function ( notification ) {
-			notification.toggleSeen( notification.isRead() || notification.getTimestamp() < timestamp );
-		} );
+	mw.echo.dm.ModelManager.prototype.onSeenTimeUpdate = function ( timestamp ) {
+		var modelId,
+			models = this.getAllNotificationModels();
 
-		this.emit( 'seen', source, timestamp );
+		for ( modelId in models ) {
+			models[ modelId ].updateSeenState( timestamp );
+		}
+
+		this.emit( 'seen', timestamp );
 	};
 
 	/**
@@ -281,12 +285,24 @@
 	 */
 	mw.echo.dm.ModelManager.prototype.hasLocalUnread = function () {
 		var isUnread = function ( item ) {
-				return !item.isRead();
-			};
+			return !item.isRead();
+		};
 
 		return this.getLocalNotifications().some( isUnread );
 	};
 
+	/**
+	 * Get local unread notifications
+	 *
+	 * @return {mw.echo.dm.NotificationItem[]} Local unread notifications
+	 */
+	mw.echo.dm.ModelManager.prototype.getLocalUnread = function () {
+		var isUnread = function ( item ) {
+			return !item.isRead();
+		};
+
+		return this.getLocalNotifications().filter( isUnread );
+	};
 	/**
 	 * Check whether there are talk notifications, and emit an event
 	 * in case there aren't any left.
@@ -306,8 +322,8 @@
 	 */
 	mw.echo.dm.ModelManager.prototype.hasLocalUnreadTalk = function () {
 		var isUnreadUserTalk = function ( item ) {
-				return !item.isRead() && item.getCategory() === 'edit-user-talk';
-			};
+			return !item.isRead() && item.getCategory() === 'edit-user-talk';
+		};
 
 		return this.getLocalNotifications().some( isUnreadUserTalk );
 	};
@@ -416,7 +432,8 @@
 	/**
 	 * Get all notifications that come from a given source
 	 *
-	 * @return {mw.echo.dm.NotificationItem[]} all notifications from that source
+	 * @param {string} [source='local'] Source name
+	 * @return {mw.echo.dm.NotificationItem[]} All notifications from that source
 	 */
 	mw.echo.dm.ModelManager.prototype.getNotificationsBySource = function ( source ) {
 		var notifications = [],
@@ -464,4 +481,4 @@
 
 	};
 
-} )( mediaWiki, jQuery );
+}( mediaWiki, jQuery ) );

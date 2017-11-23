@@ -13,6 +13,7 @@ class BackfillUnreadWikis extends Maintenance {
 		$this->mDescription = "Backfill echo_unread_wikis table";
 		$this->addOption( 'rebuild', 'Only recompute already-existing rows' );
 		$this->setBatchSize( 300 );
+		$this->requireExtension( 'Echo' );
 	}
 
 	public function execute() {
@@ -22,7 +23,7 @@ class BackfillUnreadWikis extends Maintenance {
 		$rebuild = $this->hasOption( 'rebuild' );
 		if ( $rebuild ) {
 			$iterator = new BatchRowIterator( $dbFactory->getSharedDb( DB_SLAVE ), 'echo_unread_wikis', 'euw_user', $this->mBatchSize );
-			$iterator->addConditions( array( 'euw_wiki' => wfWikiID() ) );
+			$iterator->addConditions( [ 'euw_wiki' => wfWikiID() ] );
 		} else {
 			$iterator = new BatchRowIterator( wfGetDB( DB_SLAVE ), 'user', 'user_id', $this->mBatchSize );
 			$iterator->setFetchColumns( User::selectFields() );

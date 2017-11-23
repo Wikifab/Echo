@@ -1,10 +1,19 @@
 @import '../echo.variables';
 .mw-echo-ui-notificationsInboxWidget {
-	width: @specialpage-width;
+	display: table;
+	width: 100%;
+	max-width: @specialpage-width;
+	position: relative;
+
 	&-row {
 		display: table-row;
 		width: 100%;
 	}
+
+	&-toolbarWrapper {
+		height: 4em;
+	}
+
 	&-cell {
 		display: table-cell;
 		vertical-align: middle;
@@ -19,29 +28,28 @@
 		padding-right: 1em;
 		vertical-align: top;
 
-		@media all and ( max-width: @specialpage-mobile-width-medium ) {
+		@media all and ( max-width: ( @specialpage-hd-width - 1 ) ) {
 			// Hide the sidebar for small screens
 			display: none;
 		}
 	}
-
 	&-main {
 		vertical-align: top;
-		width: 100%;
 
 		&-toolbar {
 			&-top {
 				display: table;
-				margin-bottom: 3 * @specialpage-separation-unit;
 				width: 100%;
 			}
 
-			&-bottom {
-				display: table;
-				width: inherit;
-				margin-left: auto;
-				margin-right: auto;
-				margin-top: 3 * @specialpage-separation-unit;
+			&-affixed {
+				position: fixed;
+				z-index: 2;
+				top: 0;
+				background: #fff;
+				padding-top: 0.5em;
+				padding-bottom: 0.5em;
+				box-shadow: 0 2px 0 0 rgba( 0, 0, 0, 0.1 );
 			}
 
 			&-settings {
@@ -50,10 +58,7 @@
 		}
 	}
 
-	@media all and ( max-width: @specialpage-mobile-width-medium ) {
-		// Make narrow
-		width: @specialpage-mobile-width-small;
-
+	@media all and ( max-width: ( @specialpage-hd-width - 1 ) ) {
 		// Override table-layout for the top toolbar so we get
 		// filters and pagination under one another
 		&-main {
@@ -75,13 +80,15 @@
 					display: inline-block;
 					margin-top: 1em;
 				}
-
 				&-settings {
 					.oo-ui-popupWidget-popup {
 						text-align: left;
 					}
 				}
 			}
+		}
+		&-toolbarWrapper {
+			height: 8em;
 		}
 	}
 }

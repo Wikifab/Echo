@@ -2,52 +2,24 @@
 
 class EchoTargetPageMapperTest extends MediaWikiTestCase {
 
-	public function testFetchByUserPageId() {
-		$targetMapper = new EchoTargetPageMapper( $this->mockMWEchoDbFactory( array( 'select' => false ) ) );
-		$res = $targetMapper->fetchByUserPageId( User::newFromId( 1 ), 1 );
-		$this->assertFalse( $res );
-
-		$dbResult = array(
-			(object)array(
-				'etp_user' => 1,
-				'etp_page' => 2,
-				'etp_event' => 3
-			),
-			(object)array(
-				'etp_user' => 1,
-				'etp_page' => 2,
-				'etp_event' => 7,
-			)
-		);
-		$targetMapper = new EchoTargetPageMapper( $this->mockMWEchoDbFactory( array( 'select' => $dbResult ) ) );
-		$res = $targetMapper->fetchByUserPageId( User::newFromId( 1 ), 2 );
-		$this->assertTrue( is_array( $res ) );
-		$this->assertCount( 2, $res );
-		foreach ( $res as $targetPages ) {
-			$this->assertTrue( is_array( $targetPages ) );
-			$this->assertCount( 1, $targetPages );
-			$this->assertInstanceOf( 'EchoTargetPage', reset( $targetPages ) );
-		}
-	}
-
 	public function provideDataTestInsert() {
-		return array(
-			array(
+		return [
+			[
 				'successful insert with next sequence = 1',
-				array( 'nextSequenceValue' => 1, 'insert' => true, 'insertId' => 2 ),
+				[ 'nextSequenceValue' => 1, 'insert' => true, 'insertId' => 2 ],
 				1
-			),
-			array(
+			],
+			[
 				'successful insert with insert id = 2',
-				array( 'nextSequenceValue' => null, 'insert' => true, 'insertId' => 2 ),
+				[ 'nextSequenceValue' => null, 'insert' => true, 'insertId' => 2 ],
 				2
-			),
-			array(
+			],
+			[
 				'unsuccessful insert',
-				array( 'nextSequenceValue' => null, 'insert' => false, 'insertId' => 2 ),
+				[ 'nextSequenceValue' => null, 'insert' => false, 'insertId' => 2 ],
 				false
-			),
-		);
+			],
+		];
 	}
 
 	/**
@@ -59,26 +31,6 @@ class EchoTargetPageMapperTest extends MediaWikiTestCase {
 		$this->assertEquals( $result, $targetMapper->insert( $target ), $message );
 	}
 
-	public function testDelete() {
-		$dbResult = array( 'delete' => true );
-		$targetMapper = new EchoTargetPageMapper( $this->mockMWEchoDbFactory( $dbResult ) );
-		$this->assertTrue( $targetMapper->delete( $this->mockEchoTargetPage() ) );
-
-		$dbResult = array( 'delete' => false );
-		$targetMapper = new EchoTargetPageMapper( $this->mockMWEchoDbFactory( $dbResult ) );
-		$this->assertFalse( $targetMapper->delete( $this->mockEchoTargetPage() ) );
-	}
-
-	public function testDeleteByUserEventOffset() {
-		$dbResult = array( 'delete' => true );
-		$targetMapper = new EchoTargetPageMapper( $this->mockMWEchoDbFactory( $dbResult ) );
-		$this->assertSame( $targetMapper->deleteByUserEventOffset( User::newFromId( 1 ), 500 ), true );
-
-		$dbResult = array( 'delete' => false );
-		$targetMapper = new EchoTargetPageMapper( $this->mockMWEchoDbFactory( $dbResult ) );
-		$this->assertSame( $targetMapper->deleteByUserEventOffset( User::newFromId( 1 ), 500 ), false );
-	}
-
 	/**
 	 * Mock object of EchoTargetPage
 	 */
@@ -88,7 +40,7 @@ class EchoTargetPageMapperTest extends MediaWikiTestCase {
 			->getMock();
 		$target->expects( $this->any() )
 			->method( 'toDbArray' )
-			->will( $this->returnValue( array() ) );
+			->will( $this->returnValue( [] ) );
 		$target->expects( $this->any() )
 			->method( 'getUser' )
 			->will( $this->returnValue( User::newFromId( 1 ) ) );
@@ -120,13 +72,13 @@ class EchoTargetPageMapperTest extends MediaWikiTestCase {
 	 * Mock object of DatabaseMysql ( DatabaseBase )
 	 */
 	protected function mockDb( array $dbResult ) {
-		$dbResult += array(
+		$dbResult += [
 			'nextSequenceValue' => '',
 			'insert' => '',
 			'insertId' => '',
 			'select' => '',
 			'delete' => ''
-		);
+		];
 		$db = $this->getMockBuilder( 'DatabaseMysql' )
 			->disableOriginalConstructor()
 			->getMock();

@@ -1,17 +1,31 @@
+@import 'mediawiki.mixins';
 @import '../echo.variables';
 @import '../echo.mixins';
 
 .mw-echo-ui-notificationItemWidget {
+	background-color: #f1f1f1;
 	position: relative;
 	white-space: normal;
 	padding: 0.8em 1em 0.5em 1em;
-	box-sizing: border-box;
+	.box-sizing( border-box );
 
-	border: 1px solid #DDDDDD;
+	border: 1px solid #ddd;
 	border-bottom: 0;
 
+	&:hover {
+		background-color: #ececec;
+	}
+
 	&:last-child {
-		border-bottom: 1px solid #DDDDDD;
+		border-bottom: 1px solid #ddd;
+	}
+
+	&-unread {
+		background-color: @background-color-base;
+
+		&:hover {
+			background-color: #f8f9fa;
+		}
 	}
 
 	> a,
@@ -33,12 +47,12 @@
 	}
 
 	&-icon {
+		position: absolute;
+
 		img {
 			height: 30px;
 			width: 30px;
 		}
-
-		position: absolute;
 	}
 
 	&-content {
@@ -46,7 +60,7 @@
 		// The icon is 30px
 		margin-left: 30px;
 		padding-left: 0.8em;
-		box-sizing: border-box;
+		.box-sizing( border-box );
 
 		&-message {
 			line-height: 1.3em;
@@ -55,13 +69,22 @@
 			// The 'mark as read' circle is placed with a right
 			// margin of -1em
 			padding-right: 1em;
+			// break-word rules are inconsistent accross browsers
+			// these three rules should cover the main use cases
+			// with major browser support
 			word-break: break-word;
+			word-wrap: break-word;
+			overflow-wrap: break-word;
 
 			&-header {
 				color: @notification-text-color;
 			}
 			&-body {
-				.mw-echo-ui-mixin-one-line-truncated;
+				// In the popup only, truncate the text to one-line
+				// with ellipses
+				.mw-echo-ui-notificationBadgeButtonPopupWidget-popup & {
+					.mw-echo-ui-mixin-one-line-truncated;
+				}
 				color: @notification-body-color;
 				margin-top: 4px;
 			}
@@ -98,12 +121,25 @@
 				display: table-cell;
 				vertical-align: bottom;
 				text-align: right;
-				color: black;
+				color: @color-base-emphasized;
 				opacity: @opacity-low;
 				white-space: nowrap;
 				width: 100%;
 			}
 
+		}
+	}
+
+	&-markAsReadButton {
+		float: right;
+		font-size: 1em;
+		// Compensate for the padding in the item widget
+		margin-top: -0.8em;
+		margin-right: -1em;
+		padding: 0;
+
+		.mw-echo-ui-notificationItemWidget-bundled & {
+			margin-top: 0;
 		}
 	}
 
@@ -147,7 +183,7 @@
 					&-header {
 						width: 100%;
 
-						@media all and ( min-width: @specialpage-mobile-width-medium ) {
+						@media all and ( min-width: @specialpage-hd-width ) {
 							// On small screens, don't truncate
 							position: absolute;
 							.mw-echo-ui-mixin-one-line-truncated;
@@ -200,24 +236,11 @@
 		}
 	}
 
-	&-markAsReadButton {
-		float: right;
-		font-size: 1em;
-		// Compensate for the padding in the item widget
-		margin-top: -0.8em;
-		margin-right: -1em;
-		padding: 0;
-
-		.mw-echo-ui-notificationItemWidget-bundled & {
-			margin-top: 0;
-		}
-	}
-
 	&-initiallyUnseen {
 		-webkit-animation-name: unseen-fadeout-to-read;
 		animation-name: unseen-fadeout-to-read;
-		-webkit-animation-duration: .5s;
-		animation-duration: .5s;
+		-webkit-animation-duration: 0.5s;
+		animation-duration: 0.5s;
 		-webkit-animation-delay: 2s;
 		animation-delay: 2s;
 		-webkit-animation-timing-function: ease-out;
@@ -228,18 +251,6 @@
 		&.mw-echo-ui-notificationItemWidget-unread {
 			-webkit-animation-name: unseen-fadeout-to-unread;
 			animation-name: unseen-fadeout-to-unread;
-		}
-	}
-
-	background-color: #F1F1F1;
-	&:hover {
-		background-color: #ECECEC;
-	}
-	&-unread {
-		background-color: white;
-
-		&:hover {
-			background-color: #FAFAFA;
 		}
 	}
 

@@ -1,6 +1,7 @@
 <?php
 
 use MediaWiki\MediaWikiServices;
+use Wikimedia\TestingAccessWrapper;
 
 /**
  * @group Echo
@@ -10,142 +11,125 @@ class EchoDiscussionParserTest extends MediaWikiTestCase {
 	/**
 	 * @var array
 	 */
-	protected $tablesUsed = array( 'user', 'revision', 'text', 'page' );
+	protected $tablesUsed = [ 'user', 'revision', 'text', 'page' ];
 
 	/**
-	 * Users used in these tests: signature extraction, mentioned users, ... all
-	 * assume a user exists.
+	 * Convenience users for use in these tests.
+	 * Can be setup one by one using the setupTestUser() method
+	 * Or all at once using the setupAllTestUsers() method
 	 *
 	 * @var array [username => [user preference => preference value]]
 	 */
-	protected $testUsers = array(
-		// username
-		'Werdna' => array(
-			// user preferences
+	protected $testUsers = [
+		'Werdna' => [
 			'nickname' => '',
 			'fancysig' => '0',
-		),
-		'Werdna2' => array(
+		],
+		'Werdna2' => [
 			'nickname' => '[[User:Werdna2|Andrew]]',
 			'fancysig' => '1',
-		),
-		'Werdna3' => array(
+		],
+		'Werdna3' => [
 			'nickname' => '[[User talk:Werdna3|Andrew]]',
 			'fancysig' => '1',
-		),
-		'Werdna4' => array(
+		],
+		'Werdna4' => [
 			'nickname' => '[[User:Werdna4|wer]dna]]',
 			'fancysig' => '1',
-		),
-		'We buried our secrets in the garden' => array(
+		],
+		'We buried our secrets in the garden' => [
 			'nickname' => '[[User talk:We buried our secrets in the garden#top|wbositg]]',
 			'fancysig' => '1',
-		),
-		'I Heart Spaces' => array(
+		],
+		'I Heart Spaces' => [
 			'nickname' => '[[User:I_Heart_Spaces]] ([[User_talk:I_Heart_Spaces]])',
 			'fancysig' => '1',
-		),
-		'Jam' => array(
+		],
+		'Jam' => [
 			'nickname' => '[[User:Jam]]',
 			'fancysig' => '1',
-		),
-		'Reverta-me' => array(
+		],
+		'Reverta-me' => [
 			'nickname' => "[[User:Reverta-me|<span style=\"font-size:13px; color:blue;font-family:Lucida Handwriting;text-shadow:aqua 5px 3px 12px;\">Aaaaa Bbbbbbb</span>]]'' <sup>[[User Talk:Reverta-me|<font color=\"gold\" face=\"Lucida Calligraphy\">Discussão</font>]]</sup>''",
 			'fancysig' => '1',
-		),
-		'Jorm' => array(
+		],
+		'Jorm' => [
 			'nickname' => '',
 			'fancysig' => '0',
-		),
-		'Jdforrester' => array(
+		],
+		'Jdforrester' => [
 			'nickname' => '',
 			'fancysig' => '0',
-		),
-		'DarTar' => array(
+		],
+		'DarTar' => [
 			'nickname' => '',
 			'fancysig' => '0',
-		),
-		'Bsitu' => array(
+		],
+		'Bsitu' => [
 			'nickname' => '',
 			'fancysig' => '0',
-		),
-		'JarJar' => array(
+		],
+		'JarJar' => [
 			'nickname' => '',
 			'fancysig' => '0',
-		),
-		'Schnark' => array(
+		],
+		'Schnark' => [
 			'nickname' => '[[Benutzer:Schnark]] ([[Benutzer:Schnark/js|js]])',
 			'fancysig' => '1',
-		),
-		'Cwobeel' => array(
+		],
+		'Cwobeel' => [
 			'nickname' => '[[User:Cwobeel|<span style="color:#339966">Cwobeel</span>]] [[User_talk:Cwobeel|<span style="font-size:80%">(talk)</span>]]',
 			'fancysig' => '1',
-		),
-		'Bob K31416' => array(
+		],
+		'Bob K31416' => [
 			'nickname' => '',
 			'fancysig' => '0',
-		),
-		'X" onclick="alert(\'XSS\');" title="y' => array(
+		],
+		'X" onclick="alert(\'XSS\');" title="y' => [
 			'nickname' => '',
 			'fancysig' => '0',
-		),
-		'He7d3r' => array(
+		],
+		'He7d3r' => [
 			'nickname' => '',
 			'fancysig' => '0',
-		),
-		'PauloEduardo' => array(
+		],
+		'PauloEduardo' => [
 			'nickname' => "[[User:PauloEduardo|<span style=\"font-size:13px; color:blue;font-family:Lucida Handwriting;text-shadow:aqua 5px 3px 12px;\">Paulo Eduardo</span>]]'' <sup>[[User Talk:PauloEduardo|<font color=\"gold\" face=\"Lucida Calligraphy\">Discussão</font>]]</sup>''",
 			'fancysig' => '1',
-		),
-		'PatHadley' => array(
+		],
+		'PatHadley' => [
 			'nickname' => '',
 			'fancysig' => '0',
-		),
-		'Samwalton9' => array(
+		],
+		'Samwalton9' => [
 			'nickname' => '',
 			'fancysig' => '0',
-		),
-		'Kudpung' => array(
+		],
+		'Kudpung' => [
 			'nickname' => '[[User:Kudpung|Kudpung กุดผึ้ง]] ([[User talk:Kudpung#top|talk]])',
 			'fancysig' => '1',
-		),
-		'Jim Carter' => array(
+		],
+		'Jim Carter' => [
 			'nickname' => '',
 			'fancysig' => '0',
-		),
-		'Buster7' => array(
+		],
+		'Buster7' => [
 			'nickname' => '',
 			'fancysig' => '0',
-		),
-		'Admin' => array(
+		],
+		'Admin' => [
 			'nickname' => '[[:User:Admin|Admin]]',
 			'fancysig' => '1',
-		),
-		'Test11' => array(
+		],
+		'Test11' => [
 			'nickname' => '',
 			'fancysig' => '0',
-		),
-	);
+		],
+	];
 
 	protected function setUp() {
 		parent::setUp();
-
-		$this->setMwGlobals( array( 'wgDiff' => false ) );
-
-		// users need to be added for each test, resetDB() removes them
-		// TODO: Only add users needed for each test, instead of adding them
-		// all for every one.
-		foreach ( $this->testUsers as $username => $preferences ) {
-			$user = User::createNew( $username );
-
-			// set signature preferences
-			if ( $user ) {
-				foreach ( $preferences as $option => $value ) {
-					$user->setOption( $option, $value );
-				}
-				$user->saveSettings();
-			}
-		}
+		$this->setMwGlobals( [ 'wgDiff' => false ] );
 	}
 
 	protected function tearDown() {
@@ -155,14 +139,38 @@ class EchoDiscussionParserTest extends MediaWikiTestCase {
 		unset( $wgHooks['BeforeEchoEventInsert'][999] );
 	}
 
+	private function setupAllTestUsers() {
+		foreach ( array_keys( $this->testUsers ) as $username ) {
+			$this->setupTestUser( $username );
+		}
+	}
+
+	private function setupTestUser( $username ) {
+		// Skip user creation requests that are not in the list (such as IPs)
+		if ( !array_key_exists( $username, $this->testUsers ) ) {
+			return;
+		}
+
+		$preferences = $this->testUsers[$username];
+		$user = User::createNew( $username );
+
+		// Set preferences
+		if ( $user ) {
+			foreach ( $preferences as $option => $value ) {
+				$user->setOption( $option, $value );
+			}
+			$user->saveSettings();
+		}
+	}
+
 	public function provideHeaderExtractions() {
-		return array(
-			array( '', false ),
-			array( '== Grand jury no bill reception ==', 'Grand jury no bill reception' ),
-			array( '=== Echo-Test ===', 'Echo-Test' ),
-			array( '==== Notificações ====', 'Notificações' ),
-			array( '=====Me?=====', 'Me?' ),
-		);
+		return [
+			[ '', false ],
+			[ '== Grand jury no bill reception ==', 'Grand jury no bill reception' ],
+			[ '=== Echo-Test ===', 'Echo-Test' ],
+			[ '==== Notificações ====', 'Notificações' ],
+			[ '=====Me?=====', 'Me?' ],
+		];
 	}
 
 	/**
@@ -173,20 +181,20 @@ class EchoDiscussionParserTest extends MediaWikiTestCase {
 	}
 
 	public function generateEventsForRevisionData() {
-		return array(
-			array(
+		return [
+			[
 				'new' => 637638133,
 				'old' => 637637213,
 				'username' => 'Cwobeel',
 				'lang' => 'en',
-				'pages' => array(
+				'pages' => [
 					// pages expected to exist (e.g. templates to be expanded)
 					'Template:u' => '[[User:{{{1}}}|{{<includeonly>safesubst:</includeonly>#if:{{{2|}}}|{{{2}}}|{{{1}}}}}]]<noinclude>{{documentation}}</noinclude>',
-				),
+				],
 				'title' => 'UTPage', // can't remember, not important here
-				'expected' => array(
+				'expected' => [
 					// events expected to be fired going from old revision to new
-					array(
+					[
 						'type' => 'mention',
 						'agent' => 'Cwobeel',
 						'section-title' => 'Grand jury no bill reception',
@@ -198,47 +206,47 @@ class EchoDiscussionParserTest extends MediaWikiTestCase {
 						 * user ids of the folks we're about to insert...
 						 * I'll skip that part for now.
 						 */
-					),
-				),
-			),
-			array(
+					],
+				],
+			],
+			[
 				'new' => 138275105,
 				'old' => 138274875,
 				'username' => 'Schnark',
 				'lang' => 'de',
-				'pages' => array(),
+				'pages' => [],
 				'title' => 'UTPage', // can't remember, not important here
-				'expected' => array(
-					array(
+				'expected' => [
+					[
 						'type' => 'mention',
 						'agent' => 'Schnark',
 						'section-title' => 'Echo-Test',
-					),
-				),
-			),
-			array(
+					],
+				],
+			],
+			[
 				'new' => 40610292,
 				'old' => 40608353,
 				'username' => 'PauloEduardo',
 				'lang' => 'pt',
-				'pages' => array(
+				'pages' => [
 					'Predefinição:U' => '[[User:{{{1|<noinclude>Exemplo</noinclude>}}}|{{{{{|safesubst:}}}#if:{{{2|}}}|{{{2}}}|{{{1|<noinclude>Exemplo</noinclude>}}}}}]]<noinclude>{{Atalho|Predefinição:U}}{{Documentação|Predefinição:Usuário/doc}}</noinclude>',
-				),
+				],
 				'title' => 'UTPage', // can't remember, not important here
-				'expected' => array(
-					array(
+				'expected' => [
+					[
 						'type' => 'mention',
 						'agent' => 'PauloEduardo',
 						'section-title' => 'Notificações',
-					),
-				),
-			),
-			array(
+					],
+				],
+			],
+			[
 				'new' => 646792804,
 				'old' => 646790570,
 				'username' => 'PatHadley',
 				'lang' => 'en',
-				'pages' => array(
+				'pages' => [
 					'Template:ping' => '{{SAFESUBST:<noinclude />#if:{{{1|<noinclude>$</noinclude>}}}
  |<span class="template-ping">@[[:User:{{SAFESUBST:<noinclude />BASEPAGENAME:{{{1|Example}}}}}|{{SAFESUBST:<noinclude />BASEPAGENAME:{{{label1|{{{1|Example}}}}}}}}]]{{SAFESUBST:<noinclude />#if:{{{2|}}}
  |, [[:User:{{SAFESUBST:<noinclude />BASEPAGENAME:{{{2|Example}}}}}|{{SAFESUBST:<noinclude />BASEPAGENAME:{{{label2|{{{2|Example}}}}}}}}]]{{SAFESUBST:<noinclude />#if:{{{3|}}}
@@ -259,67 +267,77 @@ class EchoDiscussionParserTest extends MediaWikiTestCase {
 {{documentation}}
 </noinclude>',
 					'MediaWiki:Signature' => '[[User:$1|$2]] {{#ifeq:{{FULLPAGENAME}}|User talk:$1|([[User talk:$1#top|talk]])|([[User talk:$1|talk]])}}',
-				),
+				],
 				'title' => 'User_talk:PatHadley',
-				'expected' => array(
-					array(
+				'expected' => [
+					[
 						'type' => 'mention',
 						'agent' => 'PatHadley',
 						'section-title' => 'Wizardry required',
-					),
-					array(
+					],
+					[
 						'type' => 'edit-user-talk',
 						'agent' => 'PatHadley',
 						'section-title' => 'Wizardry required',
-					),
-				),
+					],
+				],
 				'precondition' => 'isParserFunctionsInstalled',
-			),
-			array(
+			],
+			[
 				'new' => 647260329,
 				'old' => 647258025,
 				'username' => 'Kudpung',
 				'lang' => 'en',
-				'pages' => array(
+				'pages' => [
 					'Template:U' => '[[User:{{{1}}}|{{<includeonly>safesubst:</includeonly>#if:{{{2|}}}|{{{2}}}|{{{1}}}}}]]<noinclude>{{documentation}}</noinclude>',
-				),
+				],
 				'title' => 'User_talk:Kudpung',
-				'expected' => array(
-					array(
+				'expected' => [
+					[
 						'type' => 'mention',
 						'agent' => 'Kudpung',
 						'section-title' => 'Me?',
-					),
-					array(
+					],
+					[
 						'type' => 'edit-user-talk',
 						'agent' => 'Kudpung',
 						'section-title' => 'Me?',
-					),
-				),
-			),
+					],
+				],
+			],
 			// T68512, leading colon in user page link in signature
-			array(
+			[
 				'new' => 612485855,
 				'old' => 612485595,
 				'username' => 'Admin',
 				'lang' => 'en',
-				'pages' => array(),
+				'pages' => [],
 				'title' => 'User_talk:Admin',
-				'expected' => array(
-					array(
+				'expected' => [
+					[
 						'type' => 'mention',
 						'agent' => 'Admin',
 						'section-title' => 'Hi',
-					),
-					array(
+					],
+					[
 						'type' => 'edit-user-talk',
 						'agent' => 'Admin',
 						'section-title' => 'Hi',
-					),
-				),
+					],
+				],
 				'precondition' => 'isParserFunctionsInstalled',
-			),
-		);
+			],
+			// T154406 unintended mentions when changing content
+			[
+				'new' => 987667999,
+				'old' => 987667998,
+				'username' => 'Admin',
+				'lang' => 'en',
+				'pages' => [],
+				'title' => 'MultipleSignatureMentions',
+				'expected' => [],
+			],
+		];
 	}
 
 	/**
@@ -337,17 +355,19 @@ class EchoDiscussionParserTest extends MediaWikiTestCase {
 			}
 		}
 
+		$this->setupAllTestUsers();
+
 		$revision = $this->setupTestRevisionsForEventGeneration(
 			$newId, $oldId, $username, $lang, $pages, $title
 		);
-		$events = array();
+		$events = [];
 		$this->setupEventCallbackForEventGeneration(
 			function ( EchoEvent $event ) use ( &$events ) {
-				$events[] = array(
+				$events[] = [
 					'type' => $event->getType(),
 					'agent' => $event->getAgent()->getName(),
 					'section-title' => $event->getExtraParam( 'section-title' ),
-				);
+				];
 				return false;
 			}
 		);
@@ -361,99 +381,310 @@ class EchoDiscussionParserTest extends MediaWikiTestCase {
 	}
 
 	public function provider_generateEventsForRevision_mentionStatus() {
-		return array(
-			array(
+		return [
+			[
 				'new' => 747747748,
 				'old' => 747747747,
 				'username' => 'Admin',
 				'lang' => 'en',
-				'pages' => array(),
+				'pages' => [],
 				'title' => 'UTPage',
-				'expected' => array(
-					array(
+				'expected' => [
+					[
 						'type' => 'mention-failure',
 						'agent' => 'Admin',
 						'section-title' => 'Hello Users',
 						'notifyAgent' => true,
 						'subject-name' => 'Ping',
-					),
-					array(
+					],
+					[
 						'type' => 'mention-failure',
 						'agent' => 'Admin',
 						'section-title' => 'Hello Users',
 						'notifyAgent' => true,
 						'subject-name' => 'Po?ng',
-					),
-				),
-			),
-			array(
+					],
+				],
+			],
+			[
 				'new' => 747747750,
 				'old' => 747747747,
 				'username' => 'Admin',
 				'lang' => 'en',
-				'pages' => array(),
+				'pages' => [],
 				'title' => 'UTPage',
-				'expected' => array(
-					array(
+				'expected' => [
+					[
 						'type' => 'mention',
 						'agent' => 'Admin',
 						'section-title' => 'Hello Users',
 						'notifyAgent' => null,
 						'subject-name' => null,
-					),
-					array(
+					],
+					[
 						'type' => 'mention-success',
 						'agent' => 'Admin',
 						'section-title' => 'Hello Users',
 						'notifyAgent' => true,
 						'subject-name' => 'Test11',
-					),
-				),
-			),
-			array(
+					],
+				],
+			],
+			[
 				'new' => 747798766,
 				'old' => 747798765,
 				'username' => 'Admin',
 				'lang' => 'en',
-				'pages' => array(),
+				'pages' => [],
 				'title' => 'UTPage',
-				'expected' => array(
-					array(
+				'expected' => [
+					[
 						'type' => 'mention-failure',
 						'agent' => 'Admin',
 						'section-title' => 'Section 2',
 						'notifyAgent' => true,
 						'subject-name' => 'NoUser',
-					),
-				),
-			),
-			array(
+					],
+				],
+			],
+			[
 				'new' => 747798767,
 				'old' => 747798765,
 				'username' => 'Admin',
 				'lang' => 'en',
-				'pages' => array(),
+				'pages' => [],
 				'title' => 'UTPage',
-				'expected' => array(
-					array(
+				'expected' => [
+					[
 						'type' => 'mention-failure',
 						'agent' => 'Admin',
 						'section-title' => 'Section 2',
 						'notifyAgent' => true,
 						'subject-name' => 'NoUser',
-					),
-				),
-			),
-			array(
+					],
+				],
+			],
+			[
 				'new' => 747798768,
 				'old' => 747798765,
 				'username' => 'Admin',
 				'lang' => 'en',
-				'pages' => array(),
+				'pages' => [],
 				'title' => 'UTPage',
-				'expected' => array(),
-			),
-		);
+				'expected' => [],
+			],
+			[
+				'new' => 747798770,
+				'old' => 747798765,
+				'username' => 'Admin',
+				'lang' => 'en',
+				'pages' => [],
+				'title' => 'UTPage',
+				'expected' => [
+					[
+						'type' => 'mention',
+						'agent' => 'Admin',
+						'section-title' => 'Section 1.5',
+						'subject-name' => null,
+						'notifyAgent' => null,
+					],
+					[
+						'type' => 'mention-success',
+						'agent' => 'Admin',
+						'section-title' => 'Section 1.5',
+						'subject-name' => 'Test11',
+						'notifyAgent' => true,
+					],
+				],
+			],
+			[
+				'new' => 747798771,
+				'old' => 747798765,
+				'username' => 'Admin',
+				'lang' => 'en',
+				'pages' => [],
+				'title' => 'UTPage',
+				'expected' => [
+					[
+						'type' => 'mention-failure',
+						'agent' => 'Admin',
+						'section-title' => 'Section 1.5',
+						'subject-name' => 'NoUser1.5',
+						'notifyAgent' => true,
+					],
+					[
+						'type' => 'mention-failure',
+						'agent' => 'Admin',
+						'section-title' => 'Section 2',
+						'subject-name' => 'NoUser2',
+						'notifyAgent' => true,
+					],
+				],
+			],
+			[
+				'new' => 747798772,
+				'old' => 747798765,
+				'username' => 'Admin',
+				'lang' => 'en',
+				'pages' => [],
+				'title' => 'UTPage',
+				'expected' => [
+					[
+						'type' => 'mention-failure',
+						'agent' => 'Admin',
+						'section-title' => 'Section 1',
+						'subject-name' => 'NoUser1',
+						'notifyAgent' => true,
+					],
+					[
+						'type' => 'mention-failure',
+						'agent' => 'Admin',
+						'section-title' => 'Section 1.75',
+						'subject-name' => 'NoUser1.75',
+						'notifyAgent' => true,
+					],
+					[
+						'type' => 'mention-failure',
+						'agent' => 'Admin',
+						'section-title' => 'Section 2',
+						'subject-name' => 'NoUser2',
+						'notifyAgent' => true,
+					],
+				],
+				[
+					'new' => 987654322,
+					'old' => 987654321,
+					'username' => 'Admin',
+					'lang' => 'en',
+					'pages' => [],
+					'title' => 'User_talk:Admin',
+					'expected' => [ [
+						'type' => 'edit-user-talk',
+						'agent' => 'Admin',
+						'section-title' => false,
+						'subject-name' => null,
+						'notifyAgent' => null,
+					] ],
+				],
+				[
+					'new' => 987654323,
+					'old' => 987654321,
+					'username' => 'Admin',
+					'lang' => 'en',
+					'pages' => [],
+					'title' => 'User_talk:Admin',
+					'expected' => [
+						[
+							'type' => 'mention',
+							'agent' => 'Admin',
+							'section-title' => 'Section 1',
+							'subject-name' => null,
+							'notifyAgent' => null,
+						],
+						[
+							'type' => 'mention-success',
+							'agent' => 'Admin',
+							'section-title' => 'Section 1',
+							'subject-name' => 'Test11',
+							'notifyAgent' => true,
+						],
+						[
+							'type' => 'edit-user-talk',
+							'agent' => 'Admin',
+							'section-title' => 'Section 1',
+							'subject-name' => null,
+							'notifyAgent' => null,
+						],
+					],
+				],
+			],
+			[
+				'new' => 987654324,
+				'old' => 987654321,
+				'username' => 'Admin',
+				'lang' => 'en',
+				'pages' => [],
+				'title' => 'User_talk:Admin',
+				'expected' => [
+					[
+						'type' => 'mention',
+						'agent' => 'Admin',
+						'section-title' => 'Section 1',
+						'subject-name' => null,
+						'notifyAgent' => null,
+					],
+					[
+						'type' => 'mention-success',
+						'agent' => 'Admin',
+						'section-title' => 'Section 1',
+						'subject-name' => 'Test11',
+						'notifyAgent' => true,
+					],
+					[
+						'type' => 'edit-user-talk',
+						'agent' => 'Admin',
+						'section-title' => false,
+						'subject-name' => null,
+						'notifyAgent' => null,
+					],
+				],
+			],
+			[
+				'new' => 987654325,
+				'old' => 987654321,
+				'username' => 'Admin',
+				'lang' => 'en',
+				'pages' => [],
+				'title' => 'User_talk:Admin',
+				'expected' => [
+					[
+						'type' => 'mention',
+						'agent' => 'Admin',
+						'section-title' => 'Section 2',
+						'subject-name' => null,
+						'notifyAgent' => null,
+					],
+					[
+						'type' => 'mention-success',
+						'agent' => 'Admin',
+						'section-title' => 'Section 2',
+						'subject-name' => 'Test11',
+						'notifyAgent' => true,
+					],
+					[
+						'type' => 'edit-user-talk',
+						'agent' => 'Admin',
+						'section-title' => 'Section 2',
+						'subject-name' => null,
+						'notifyAgent' => null,
+					],
+				],
+			],
+			[
+				'new' => 987654401,
+				'old' => 987654400,
+				'username' => 'Admin',
+				'lang' => 'en',
+				'pages' => [],
+				'title' => 'UTPage2',
+				'expected' => [
+					[
+						'type' => 'mention',
+						'agent' => 'Admin',
+						'section-title' => false,
+						'subject-name' => null,
+						'notifyAgent' => null,
+					],
+					[
+						'type' => 'mention-success',
+						'agent' => 'Admin',
+						'section-title' => false,
+						'subject-name' => 'Test11',
+						'notifyAgent' => true,
+					],
+				],
+			],
+		];
 	}
 
 	/**
@@ -462,25 +693,29 @@ class EchoDiscussionParserTest extends MediaWikiTestCase {
 	public function testGenerateEventsForRevision_mentionStatus(
 		$newId, $oldId, $username, $lang, $pages, $title, $expected
 	) {
+		$this->setupAllTestUsers();
+
 		$revision = $this->setupTestRevisionsForEventGeneration(
 			$newId, $oldId, $username, $lang, $pages, $title
 		);
-		$events = array();
+		$events = [];
 		$this->setupEventCallbackForEventGeneration(
 			function ( EchoEvent $event ) use ( &$events ) {
-				$events[] = array(
+				$events[] = [
 					'type' => $event->getType(),
 					'agent' => $event->getAgent()->getName(),
 					'section-title' => $event->getExtraParam( 'section-title' ),
 					'notifyAgent' => $event->getExtraParam( 'notifyAgent' ),
 					'subject-name' => $event->getExtraParam( 'subject-name' ),
-				);
+				];
 				return false;
 			}
 		);
 
 		// enable mention failure and success notifications
 		$this->setMwGlobals( 'wgEchoMentionStatusNotifications', true );
+		// enable multiple sections mentions
+		$this->setMwGlobals( 'wgEchoMentionsOnMultipleSectionEdits', true );
 
 		EchoDiscussionParser::generateEventsForRevision( $revision );
 
@@ -488,17 +723,17 @@ class EchoDiscussionParserTest extends MediaWikiTestCase {
 	}
 
 	public function provider_extractSections() {
-		return array(
-			array(
+		return [
+			[
 				'content' => 'Just Text.',
-				'result' => array(
-					array(
+				'result' => [
+					[
 						'header' => false,
 						'content' => 'Just Text.',
-					),
-				),
-			),
-			array(
+					],
+				],
+			],
+			[
 				'content' =>
 <<<TEXT
 Text and a
@@ -506,46 +741,46 @@ Text and a
 with text
 TEXT
 				,
-				'result' => array(
-					array(
+				'result' => [
+					[
 						'header' => false,
 						'content' =>
 <<<TEXT
 Text and a
 TEXT
 						,
-					),
-					array(
-						'header' => '== Headline ==',
+					],
+					[
+						'header' => 'Headline',
 						'content' =>
 <<<TEXT
 == Headline ==
 with text
 TEXT
 						,
-					),
-				),
-			),
-			array(
+					],
+				],
+			],
+			[
 				'content' =>
 <<<TEXT
 == Headline ==
 Text and a [[User:Test]]
 TEXT
 			,
-				'result' => array(
-					array(
-						'header' => '== Headline ==',
+				'result' => [
+					[
+						'header' => 'Headline',
 						'content' =>
 <<<TEXT
 == Headline ==
 Text and a [[User:Test]]
 TEXT
 					,
-					),
-				),
-			),
-			array(
+					],
+				],
+			],
+			[
 				'content' =>
 <<<TEXT
 Content 0
@@ -555,32 +790,32 @@ Content 1
 Content 2
 TEXT
 			,
-				'result' => array(
-					array(
+				'result' => [
+					[
 						'header' => false,
 						'content' => 'Content 0',
-					),
-					array(
-						'header' => '== Headline 1 ==',
+					],
+					[
+						'header' => 'Headline 1',
 						'content' =>
 <<<TEXT
 == Headline 1 ==
 Content 1
 TEXT
 					,
-					),
-					array(
-						'header' => '=== Headline 2 ===',
+					],
+					[
+						'header' => 'Headline 2',
 						'content' =>
 <<<TEXT
 === Headline 2 ===
 Content 2
 TEXT
 					,
-					),
-				),
-			),
-			array(
+					],
+				],
+			],
+			[
 				'content' =>
 <<<TEXT
 == Headline 1 ==
@@ -589,28 +824,28 @@ TEXT
 انا بخير شكرا
 TEXT
 			,
-				'result' => array(
-					array(
-						'header' => '== Headline 1 ==',
+				'result' => [
+					[
+						'header' => 'Headline 1',
 						'content' =>
 <<<TEXT
 == Headline 1 ==
 مرحبا كيف حالك
 TEXT
 					,
-					),
-					array(
-						'header' => '=== Headline 2 ===',
+					],
+					[
+						'header' => 'Headline 2',
 						'content' =>
 <<<TEXT
 === Headline 2 ===
 انا بخير شكرا
 TEXT
 					,
-					),
-				),
-			),
-			array(
+					],
+				],
+			],
+			[
 				'content' =>
 <<<TEXT
 مرحبا كيف حالك
@@ -618,27 +853,27 @@ TEXT
 انا بخير شكرا
 TEXT
 			,
-				'result' => array(
-					array(
+				'result' => [
+					[
 						'header' => false,
 						'content' =>
 <<<TEXT
 مرحبا كيف حالك
 TEXT
 					,
-					),
-					array(
-						'header' => '=== Headline 1 ===',
+					],
+					[
+						'header' => 'Headline 1',
 						'content' =>
 <<<TEXT
 === Headline 1 ===
 انا بخير شكرا
 TEXT
 					,
-					),
-				),
-			),
-		);
+					],
+				],
+			],
+		];
 	}
 
 	/**
@@ -652,36 +887,37 @@ TEXT
 	}
 
 	public function testGenerateEventsForRevision_tooManyMentionsFailure() {
-		$expected = array(
-			array(
+		$expected = [
+			[
 				'type' => 'mention-failure-too-many',
 				'agent' => 'Admin',
 				'section-title' => 'Hello Users',
 				'max-mentions' => 5,
-			),
-		);
+			],
+		];
 
-		$revision = $this->setupTestRevisionsForEventGeneration( 747747749, 747747747, 'Admin', 'en', array(), 'UTPage' );
+		$this->setupTestUser( 'Admin' );
+		$revision = $this->setupTestRevisionsForEventGeneration( 747747749, 747747747, 'Admin', 'en', [], 'UTPage' );
 
-		$events = array();
+		$events = [];
 		$this->setupEventCallbackForEventGeneration(
 			function ( EchoEvent $event ) use ( &$events ) {
-				$events[] = array(
+				$events[] = [
 					'type' => $event->getType(),
 					'agent' => $event->getAgent()->getName(),
 					'section-title' => $event->getExtraParam( 'section-title' ),
 					'max-mentions' => $event->getExtraParam( 'max-mentions' ),
-				);
+				];
 				return false;
 			}
 		);
 
-		$this->setMwGlobals( array(
+		$this->setMwGlobals( [
 			// enable mention failure and success notifications
 			'wgEchoMentionStatusNotifications' => true,
 			// lower limit for the mention-failure-too-many notification
 			'wgEchoMaxMentionsCount' => 5
-		) );
+		] );
 
 		EchoDiscussionParser::generateEventsForRevision( $revision );
 
@@ -690,13 +926,13 @@ TEXT
 
 	private function setupTestRevisionsForEventGeneration( $newId, $oldId, $username, $lang, $pages, $title ) {
 		$langObj = Language::factory( $lang );
-		$this->setMwGlobals( array(
+		$this->setMwGlobals( [
 			// this global is used by the code that interprets the namespace part of
 			// titles (Title::getTitleParser), so should be the fake language ;)
 			'wgContLang' => $langObj,
 			// this one allows Mediawiki:xyz pages to be set as messages
 			'wgUseDatabaseMessages' => true
-		) );
+		] );
 
 		// Since we reset the $wgContLang global, reset the TitleParser service
 		$services = MediaWikiServices::getInstance();
@@ -719,7 +955,7 @@ TEXT
 
 		// pages to be created: templates may be used to ping users (e.g.
 		// {{u|...}}) but if we don't have that template, it just won't work!
-		$pages += array( $title => '' );
+		$pages += [ $title => '' ];
 		foreach ( $pages as $pageTitle => $pageText ) {
 			$template = WikiPage::factory( Title::newFromText( $pageTitle ) );
 			$template->doEditContent( new WikitextContent( $pageText ), '' );
@@ -744,14 +980,14 @@ TEXT
 		$property->setValue( $title, $lang );
 
 		// create stub Revision object
-		$row = array(
+		$row = [
 			'id' => $newId,
 			'user_text' => $username,
 			'user' => User::newFromName( $username )->getId(),
 			'parent_id' => $oldId,
 			'text' => $newText,
 			'title' => $title,
-		);
+		];
 		$revision = Revision::newFromRow( $row );
 
 		// generate diff between 2 revisions
@@ -764,7 +1000,7 @@ TEXT
 		$class = new ReflectionClass( 'EchoDiscussionParser' );
 		$property = $class->getProperty( 'revisionInterpretationCache' );
 		$property->setAccessible( true );
-		$property->setValue( array( $revision->getId() => $output ) );
+		$property->setValue( [ $revision->getId() => $output ] );
 		return $revision;
 	}
 
@@ -781,38 +1017,7 @@ TEXT
 
 	// TODO test cases for:
 	// - stripHeader
-	// - stripIndents
 	// - stripSignature
-
-	public function testDiscussionParserAcceptsInternalDiff() {
-		global $wgDiff;
-
-		$origWgDiff = $wgDiff;
-		$wgDiff = '/does/not/exist/or/at/least/we/hope/not';
-		try {
-			$res = EchoDiscussionParser::getMachineReadableDiff(
-				<<<TEXT
-line 1
-line 2
-line 3
-line 4
-TEXT
-,
-				<<<TEXT
-line 1
-line c
-line 4
-TEXT
-			);
-		} catch ( MWException $e ) {
-			$wgDiff = $origWgDiff;
-			throw $e;
-		}
-		$wgDiff = $origWgDiff;
-
-		// Test failure occurs when MWException is thrown due to parsing failure
-		$this->assertTrue( true );
-	}
 
 	public function testTimestampRegex() {
 		$exemplarTimestamp = self::getExemplarTimestamp();
@@ -833,6 +1038,10 @@ TEXT
 	 * FIXME some of the app logic is in the test...
 	 */
 	public function testSigningDetection( $line, $expectedUser ) {
+		if ( is_array( $expectedUser ) ) {
+			$this->setupTestUser( $expectedUser[1] );
+		}
+
 		if ( !EchoDiscussionParser::isSignedComment( $line ) ) {
 			$this->assertEquals( $expectedUser, false );
 
@@ -855,97 +1064,97 @@ TEXT
 	public function signingDetectionData() {
 		$ts = self::getExemplarTimestamp();
 
-		return array(
+		return [
 			// Basic
-			array(
+			[
 				"I like this. [[User:Werdna|Werdna]] ([[User talk:Werdna|talk]]) $ts",
-				array(
+				[
 					13,
 					'Werdna'
-				),
-			),
+				],
+			],
 			// Confounding
-			array(
+			[
 				"[[User:Jorm]] is a meanie. --[[User:Werdna2|Andrew]] $ts",
-				array(
+				[
 					29,
 					"Werdna2"
-				),
-			),
+				],
+			],
 			// Talk page link only
-			array(
+			[
 				"[[User:Swalling|Steve]] is the best person I have ever met. --[[User talk:Werdna3|Andrew]] $ts",
-				array(
+				[
 					62,
 					'Werdna3'
-				),
-			),
+				],
+			],
 			// Anonymous user
-			array(
+			[
 				"I am anonymous because I like my IP address. --[[Special:Contributions/127.0.0.1|127.0.0.1]] $ts",
-				array(
+				[
 					47,
 					'127.0.0.1'
-				),
-			),
+				],
+			],
 			// No signature
-			array(
+			[
 				"Well, \nI do think that [[User:Newyorkbrad]] is pretty cool, but what do I know?",
 				false
-			),
+			],
 			// Hash symbols in usernames
-			array(
+			[
 				"What do you think? [[User talk:We buried our secrets in the garden#top|wbositg]] $ts",
-				array(
+				[
 					19,
 					'We buried our secrets in the garden'
-				),
-			),
+				],
+			],
 			// Title that gets normalized different than it is provided in the wikitext
-			array(
+			[
 				"Beep boop [[User:I_Heart_Spaces]] ([[User_talk:I_Heart_Spaces]]) $ts",
-				array(
+				[
 					strlen( "Beep boop " ),
 					'I Heart Spaces'
-				),
-			),
+				],
+			],
 			// Accepts ] in the pipe
-			array(
+			[
 				"Shake n Bake --[[User:Werdna4|wer]dna]] $ts",
-				array(
+				[
 					strlen( "Shake n Bake --" ),
 					'Werdna4',
-				),
-			),
+				],
+			],
 
-			array(
+			[
 				"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxã? [[User:Jam]] $ts",
-				array(
+				[
 					strlen( "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxã? " ),
 					"Jam"
-				),
-			),
+				],
+			],
 			// extra long signature
-			array(
+			[
 				"{{U|He7d3r}}, xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxã? [[User:Reverta-me|<span style=\"font-size:13px; color:blue;font-family:Lucida Handwriting;text-shadow:aqua 5px 3px 12px;\">Aaaaa Bbbbbbb</span>]]'' <sup>[[User Talk:Reverta-me|<font color=\"gold\" face=\"Lucida Calligraphy\">Discussão</font>]]</sup>''",
-				array(
+				[
 					strlen( "{{U|He7d3r}}, xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxã? " ),
 					'Reverta-me',
-				),
-			),
+				],
+			],
 			// Bug: T87852
-			array(
+			[
 				"Test --[[Benutzer:Schnark]] ([[Benutzer:Schnark/js|js]])",
-				array(
+				[
 					strlen( "Test --" ),
 					'Schnark',
-				),
-			),
+				],
+			],
 			// when adding additional tests, make sure to add the non-anon users
 			// to EchoDiscussionParserTest::$testusers - the DiscussionParser
 			// needs the users to exist, because it'll generate a comparison
 			// signature, which is different when the user is considered anon
-		);
+		];
 	}
 
 	/** @dataProvider diffData */
@@ -958,8 +1167,8 @@ TEXT
 	}
 
 	public function diffData() {
-		return array(
-			array(
+		return [
+			[
 				<<<TEXT
 line 1
 line 2
@@ -972,14 +1181,14 @@ line 3
 line 4
 TEXT
 			,
-				array( array(
+				[ [
 					'action' => 'subtract',
 					'content' => 'line 2',
 					'left-pos' => 2,
 					'right-pos' => 2,
-				) )
-			),
-			array(
+				] ]
+			],
+			[
 				<<<TEXT
 line 1
 line 2
@@ -994,14 +1203,14 @@ line 3
 line 4
 TEXT
 			,
-				array( array(
+				[ [
 					'action' => 'add',
 					'content' => 'line 2.5',
 					'left-pos' => 3,
 					'right-pos' => 3,
-				) )
-			),
-			array(
+				] ]
+			],
+			[
 				<<<TEXT
 line 1
 line 2
@@ -1015,15 +1224,15 @@ line 3
 line 4
 TEXT
 			,
-				array( array(
+				[ [
 					'action' => 'change',
 					'old_content' => 'line 2',
 					'new_content' => 'line b',
 					'left-pos' => 2,
 					'right-pos' => 2,
-				) )
-			),
-			array(
+				] ]
+			],
+			[
 				<<<TEXT
 line 1
 line 2
@@ -1039,28 +1248,29 @@ line 3
 line 4
 TEXT
 			,
-				array(
-					array(
+				[
+					[
 						'action' => 'change',
 						'old_content' => 'line 2',
 						'new_content' => 'line b',
 						'left-pos' => 2,
 						'right-pos' => 2,
-					),
-					array(
+					],
+					[
 						'action' => 'add',
 						'content' => 'line c
 line d',
 						'left-pos' => 3,
 						'right-pos' => 3,
-					),
-				),
-			),
-		);
+					],
+				],
+			],
+		];
 	}
 
 	/** @dataProvider annotationData */
 	public function testAnnotation( $message, $diff, $user, $expectedAnnotation ) {
+		$this->setupTestUser( $user );
 		$actual = EchoDiscussionParser::interpretDiff( $diff, $user );
 		$this->assertEquals( $expectedAnnotation, $actual, $message );
 	}
@@ -1068,36 +1278,36 @@ line d',
 	public function annotationData() {
 		$ts = self::getExemplarTimestamp();
 
-		return array(
+		return [
 
-			array(
+			[
 				'Must detect added comments',
 				// Diff
-				array(
+				[
 					// Action
-					array(
+					[
 						'action' => 'add',
 						'content' => ":What do you think? [[User:Werdna|Werdna]] ([[User talk:Werdna|talk]]) $ts",
 						'left-pos' => 3,
 						'right-pos' => 3,
-					),
-					'_info' => array(
-						'lhs' => array(
+					],
+					'_info' => [
+						'lhs' => [
 							'== Section 1 ==',
 							"I do not like you. [[User:Jorm|Jorm]] ([[User talk:Jorm|talk]]) $ts",
-						),
-						'rhs' => array(
+						],
+						'rhs' => [
 							'== Section 1 ==',
 							"I do not like you. [[User:Jorm|Jorm]] ([[User talk:Jorm|talk]]) $ts",
 							":What do you think? [[User:Werdna|Werdna]] ([[User talk:Werdna|talk]]) $ts",
-						),
-					),
-				),
+						],
+					],
+				],
 				// User
 				'Werdna',
 				// Expected annotation
-				array(
-					array(
+				[
+					[
 						'type' => 'add-comment',
 						'content' => ":What do you think? [[User:Werdna|Werdna]] ([[User talk:Werdna|talk]]) $ts",
 						'full-section' => <<<TEXT
@@ -1105,42 +1315,42 @@ line d',
 I do not like you. [[User:Jorm|Jorm]] ([[User talk:Jorm|talk]]) $ts
 :What do you think? [[User:Werdna|Werdna]] ([[User talk:Werdna|talk]]) $ts
 TEXT
-					),
-				),
-			),
+					],
+				],
+			],
 
-			array(
+			[
 				'Full Section must not include the following pre-existing section',
 				// Diff
-				array(
+				[
 					// Action
-					array(
+					[
 						'action' => 'add',
 						'content' => ":What do you think? [[User:Werdna|Werdna]] ([[User talk:Werdna|talk]]) $ts",
 						'left-pos' => 3,
 						'right-pos' => 3,
-					),
-					'_info' => array(
-						'lhs' => array(
+					],
+					'_info' => [
+						'lhs' => [
 							'== Section 1 ==',
 							"I do not like you. [[User:Jorm|Jorm]] ([[User talk:Jorm|talk]]) $ts",
 							'== Section 2 ==',
 							"Well well well. [[User:DarTar|DarTar]] ([[User talk:DarTar|talk]]) $ts",
-						),
-						'rhs' => array(
+						],
+						'rhs' => [
 							'== Section 1 ==',
 							"I do not like you. [[User:Jorm|Jorm]] ([[User talk:Jorm|talk]]) $ts",
 							":What do you think? [[User:Werdna|Werdna]] ([[User talk:Werdna|talk]]) $ts",
 							'== Section 2 ==',
 							"Well well well. [[User:DarTar|DarTar]] ([[User talk:DarTar|talk]]) $ts",
-						),
-					),
-				),
+						],
+					],
+				],
 				// User
 				'Werdna',
 				// Expected annotation
-				array(
-					array(
+				[
+					[
 						'type' => 'add-comment',
 						'content' => ":What do you think? [[User:Werdna|Werdna]] ([[User talk:Werdna|talk]]) $ts",
 						'full-section' => <<<TEXT
@@ -1148,16 +1358,16 @@ TEXT
 I do not like you. [[User:Jorm|Jorm]] ([[User talk:Jorm|talk]]) $ts
 :What do you think? [[User:Werdna|Werdna]] ([[User talk:Werdna|talk]]) $ts
 TEXT
-					),
-				),
-			),
+					],
+				],
+			],
 
-			array(
+			[
 				'Must detect new-section-with-comment when a new section is added',
 				// Diff
-				array(
+				[
 					// Action
-					array(
+					[
 						'action' => 'add',
 						'content' => <<<TEXT
 == Section 1a ==
@@ -1166,16 +1376,16 @@ TEXT
 					,
 						'left-pos' => 4,
 						'right-pos' => 4,
-					),
-					'_info' => array(
-						'lhs' => array(
+					],
+					'_info' => [
+						'lhs' => [
 							'== Section 1 ==',
 							"I do not like you. [[User:Jorm|Jorm]] ([[User talk:Jorm|talk]]) $ts",
 							":What do you think? [[User:Werdna|Werdna]] ([[User talk:Werdna|talk]]) $ts",
 							'== Section 2 ==',
 							"Well well well. [[User:DarTar|DarTar]] ([[User talk:DarTar|talk]]) $ts",
-						),
-						'rhs' => array(
+						],
+						'rhs' => [
 							'== Section 1 ==',
 							"I do not like you. [[User:Jorm|Jorm]] ([[User talk:Jorm|talk]]) $ts",
 							":What do you think? [[User:Werdna|Werdna]] ([[User talk:Werdna|talk]]) $ts",
@@ -1183,25 +1393,25 @@ TEXT
 							'Hmmm? [[User:Jdforrester|Jdforrester]] ([[User talk:Jdforrested|talk]]) $ts',
 							'== Section 2 ==',
 							"Well well well. [[User:DarTar|DarTar]] ([[User talk:DarTar|talk]]) $ts",
-						),
-					),
-				),
+						],
+					],
+				],
 				// User
 				'Jdforrester',
 				// Expected annotation
-				array(
-					array(
+				[
+					[
 						'type' => 'new-section-with-comment',
 						'content' => <<<TEXT
 == Section 1a ==
 Hmmm? [[User:Jdforrester|Jdforrester]] ([[User talk:Jdforrester|talk]]) $ts
 TEXT
 					,
-					),
-				),
-			),
+					],
+				],
+			],
 
-			array(
+			[
 				'Must detect multiple added comments when multiple sections are edited',
 				EchoDiscussionParser::getMachineReadableDiff(
 					<<<TEXT
@@ -1229,8 +1439,8 @@ TEXT
 				// User
 				'JarJar',
 				// Expected annotation
-				array(
-					array(
+				[
+					[
 						'type' => 'add-comment',
 						'content' => ":New Comment [[User:JarJar|JarJar]] ([[User talk:JarJar|talk]]) $ts",
 						'full-section' => <<<TEXT
@@ -1239,8 +1449,8 @@ I do not like you. [[User:Jorm|Jorm]] ([[User talk:Jorm|talk]]) $ts
 :What do you think? [[User:Werdna|Werdna]] ([[User talk:Werdna|talk]]) $ts
 :New Comment [[User:JarJar|JarJar]] ([[User talk:JarJar|talk]]) $ts
 TEXT
-					),
-					array(
+					],
+					[
 						'type' => 'add-comment',
 						'content' => ":Other New Comment [[User:JarJar|JarJar]] ([[User talk:JarJar|talk]]) $ts",
 						'full-section' => <<<TEXT
@@ -1248,11 +1458,11 @@ TEXT
 Hai [[User:Bsitu|Bsitu]] ([[User talk:Bsitu|talk]]) $ts
 :Other New Comment [[User:JarJar|JarJar]] ([[User talk:JarJar|talk]]) $ts
 TEXT
-					),
-				),
-			),
+					],
+				],
+			],
 
-			array(
+			[
 				'Bug T78424',
 				EchoDiscussionParser::getMachineReadableDiff(
 					<<<TEXT
@@ -1274,20 +1484,20 @@ TEXT
 				// User
 				'Cwobeel',
 				// Expected annotation
-				array(
-					array(
+				[
+					[
 						'type' => 'new-section-with-comment',
 						'content' => '== Grand jury no bill reception ==
 
 {{u|Bob K31416}} has started a process of summarizing that section, in a manner that I believe it to be counter productive. We have expert opinions from legal, law enforcement, politicians, and media outlets all of which are notable and informative. [[WP:NOTPAPER|Wikipedia is not paper]] – If the section is too long, the correct process to avoid losing good content that is well sources, is to create a sub-article with all the detail, and summarize here per [[WP:SUMMARY]]. But deleting useful and well sourced material, is not acceptable. We are here to build an encyclopedia. - [[User:Cwobeel|<span style="color:#339966">Cwobeel</span>]] [[User_talk:Cwobeel|<span style="font-size:80%">(talk)</span>]] 16:02, 11 December 2014 (UTC)',
-					),
-				),
-			),
+					],
+				],
+			],
 			// when adding additional tests, make sure to add the non-anon users
 			// to EchoDiscussionParserTest::$testusers - the DiscussionParser
 			// needs the users to exist, because it'll generate a comparison
 			// signature, which is different when the user is considered anon
-		);
+		];
 	}
 
 	public static function getExemplarTimestamp() {
@@ -1306,8 +1516,8 @@ TEXT
 		$name = 'Werdna'; // See EchoDiscussionParserTest::$testusers
 		$comment = self::signedMessage( $name );
 
-		return array(
-			array(
+		return [
+			[
 				'Must detect first sub heading when inserting in the middle of two sub headings',
 				// expected header content
 				'Sub Heading 1',
@@ -1325,9 +1535,9 @@ $comment
 				",
 				// user signing new comment
 				$name
-			),
+			],
 
-			array(
+			[
 				'Must detect second sub heading when inserting in the end of two sub headings',
 				// expected header content
 				'Sub Heading 2',
@@ -1345,9 +1555,9 @@ $comment
 				",
 				// user signing new comment
 				$name
-			),
+			],
 
-			array(
+			[
 				'Commenting in multiple sub-headings must result in no section link',
 				// expected header content
 				'',
@@ -1367,9 +1577,9 @@ $comment
 				",
 				// user signing new comment
 				$name
-			),
+			],
 
-			array(
+			[
 				'Must accept headings without a space between the = and the section name',
 				// expected header content
 				'Heading',
@@ -1381,9 +1591,9 @@ $comment
 				",
 				// user signing new comment
 				$name
-			),
+			],
 
-			array(
+			[
 				'Must not accept invalid headings split with a return',
 				// expected header content
 				'',
@@ -1396,14 +1606,16 @@ $comment
 				",
 				// user signing new comment
 				$name
-			),
-		);
+			],
+		];
 	}
 
 	/**
 	 * @dataProvider provider_detectSectionTitleAndText
 	 */
 	public function testDetectSectionTitleAndText( $message, $expect, $format, $name ) {
+		$this->setupTestUser( $name );
+
 		// str_replace because we want to replace multiple instances of '%s' with the same value
 		$before = str_replace( '%s', '', $format );
 		$after = str_replace( '%s', self::signedMessage( $name ), $format );
@@ -1414,7 +1626,7 @@ $comment
 		// There should be a section-text only if there is section-title
 		$expectText = $expect ? self::message( $name ) : '';
 		$this->assertEquals(
-			array( 'section-title' => $expect, 'section-text' => $expectText ),
+			[ 'section-title' => $expect, 'section-text' => $expectText ],
 			EchoDiscussionParser::detectSectionTitleAndText( $interp ),
 			$message
 		);
@@ -1429,8 +1641,8 @@ $comment
 	}
 
 	public static function provider_getFullSection() {
-		$tests = array(
-			array(
+		$tests = [
+			[
 				'Extracts full section',
 				// Full document content
 				<<<TEXT
@@ -1443,28 +1655,28 @@ baz
 TEXT
 			,
 				// Map of Line numbers to expanded section content
-				array(
+				[
 					1 => "==Header 1==\nfoo",
 					2 => "==Header 1==\nfoo",
 					3 => "===Header 2===\nbar",
 					4 => "===Header 2===\nbar",
 					5 => "==Header 3==\nbaz",
 					6 => "==Header 3==\nbaz",
-				),
-			),
-		);
+				],
+			],
+		];
 
 		// Allow for setting an array of line numbers to expand from rather than
 		// just a single line number
-		$retval = array();
+		$retval = [];
 		foreach ( $tests as $test ) {
 			foreach ( $test[2] as $lineNum => $expected ) {
-				$retval[] = array(
+				$retval[] = [
 					$test[0],
 					$expected,
 					$test[1],
 					$lineNum,
-				);
+				];
 			}
 		}
 
@@ -1494,37 +1706,37 @@ TEXT
 	}
 
 	public function testGetOverallUserMentionsCount() {
-		$userMentions = array(
-			'validMentions' => array( 1 => 1 ),
-			'unknownUsers' => array( 'NotKnown1', 'NotKnown2' ),
-			'anonymousUsers' => array( '127.0.0.1' ),
-		);
+		$userMentions = [
+			'validMentions' => [ 1 => 1 ],
+			'unknownUsers' => [ 'NotKnown1', 'NotKnown2' ],
+			'anonymousUsers' => [ '127.0.0.1' ],
+		];
 
 		$discussionParser = TestingAccessWrapper::newFromClass( 'EchoDiscussionParser' );
 		$this->assertEquals( 4, $discussionParser->getOverallUserMentionsCount( $userMentions ) );
 	}
 
 	public function provider_getUserMentions() {
-		return array(
-			array(
-				array( 'NotKnown1' => 0 ),
-				array(
-					'validMentions' => array(),
-					'unknownUsers' => array( 'NotKnown1' ),
-					'anonymousUsers' => array(),
-				),
+		return [
+			[
+				[ 'NotKnown1' => 0 ],
+				[
+					'validMentions' => [],
+					'unknownUsers' => [ 'NotKnown1' ],
+					'anonymousUsers' => [],
+				],
 				1
-			),
-			array(
-				array( '127.0.0.1' => 0 ),
-				array(
-					'validMentions' => array(),
-					'unknownUsers' => array(),
-					'anonymousUsers' => array( '127.0.0.1' ),
-				),
+			],
+			[
+				[ '127.0.0.1' => 0 ],
+				[
+					'validMentions' => [],
+					'unknownUsers' => [],
+					'anonymousUsers' => [ '127.0.0.1' ],
+				],
 				1
-			),
-		);
+			],
+		];
 	}
 
 	/**
@@ -1538,41 +1750,43 @@ TEXT
 
 	public function testGetUserMentions_validMention() {
 		$userName = 'Admin';
+		$this->setupTestUser( $userName );
 		$userId = User::newFromName( $userName )->getId();
-		$expectedUserMentions = array(
-			'validMentions' => array( $userId => $userId ),
-			'unknownUsers' => array(),
-			'anonymousUsers' => array(),
-		);
-		$userLinks = array( $userName => $userId );
+		$expectedUserMentions = [
+			'validMentions' => [ $userId => $userId ],
+			'unknownUsers' => [],
+			'anonymousUsers' => [],
+		];
+		$userLinks = [ $userName => $userId ];
 		$this->testGetUserMentions( $userLinks, $expectedUserMentions, 1 );
 	}
 
 	public function testGetUserMentions_ownMention() {
 		$userName = 'Admin';
+		$this->setupTestUser( $userName );
 		$userId = User::newFromName( 'Admin' )->getId();
-		$expectedUserMentions = array(
-			'validMentions' => array(),
-			'unknownUsers' => array(),
-			'anonymousUsers' => array(),
-		);
-		$userLinks = array( $userName => $userId );
+		$expectedUserMentions = [
+			'validMentions' => [],
+			'unknownUsers' => [],
+			'anonymousUsers' => [],
+		];
+		$userLinks = [ $userName => $userId ];
 		$this->testGetUserMentions( $userLinks, $expectedUserMentions, $userId );
 	}
 
 	public function testGetUserMentions_tooManyMentions() {
-		$userLinks = array(
+		$userLinks = [
 			'NotKnown1' => 0,
 			'NotKnown2' => 0,
 			'NotKnown3' => 0,
 			'127.0.0.1' => 0,
 			'127.0.0.2' => 0,
-		);
+		];
 
-		$this->setMwGlobals( array(
+		$this->setMwGlobals( [
 			// lower limit for the mention-too-many notification
 			'wgEchoMaxMentionsCount' => 3
-		) );
+		] );
 
 		$title = Title::newFromText( 'Test' );
 		$discussionParser = TestingAccessWrapper::newFromClass( 'EchoDiscussionParser' );
@@ -1585,5 +1799,17 @@ TEXT
 		} else {
 			return "ParserFunctions not enabled";
 		}
+	}
+
+	public function testGetTextSnippet() {
+		$this->assertEquals(
+			'Page001',
+			EchoDiscussionParser::getTextSnippet(
+				'[[:{{BASEPAGENAME}}]]',
+				Language::factory( 'en' ),
+				150,
+				Title::newFromText( 'Page001' )
+			)
+		);
 	}
 }

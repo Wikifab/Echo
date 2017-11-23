@@ -50,18 +50,18 @@
 		// Properties
 		this.types = this.manager.getTypes();
 
-		this.maxNotificationCount = mw.config.get( 'wgEchoMaxNotificationCount' );
 		this.numItems = config.numItems || 0;
 		this.badgeLabel = config.badgeLabel || this.numItems;
 		this.hasRunFirstTime = false;
 
 		buttonFlags = [];
-		if ( !!config.hasUnseen ) {
+		if ( config.hasUnseen ) {
 			buttonFlags.push( 'unseen' );
 		}
 
 		this.badgeButton = new mw.echo.ui.BadgeLinkWidget( {
 			label: this.badgeLabel,
+			type: this.manager.getTypeString(),
 			numItems: this.numItems,
 			flags: buttonFlags,
 			// The following messages can be used here:
@@ -176,6 +176,7 @@
 		this.badgeButton.connect( this, {
 			click: 'onBadgeButtonClick'
 		} );
+		this.notificationsWidget.connect( this, { modified: 'onNotificationsListModified' } );
 
 		this.$element
 			.prop( 'id', 'pt-notifications-' + adjustedTypeString )
@@ -215,6 +216,16 @@
 
 	/* Methods */
 
+	/**
+	 * Respond to list widget modified event.
+	 *
+	 * This means the list's actual DOM was modified and we should make sure
+	 * that the popup resizes itself.
+	 */
+	mw.echo.ui.NotificationBadgeWidget.prototype.onNotificationsListModified = function () {
+		this.popup.clip();
+	};
+
 	mw.echo.ui.NotificationBadgeWidget.prototype.onFooterNoticeDismiss = function () {
 		// Clip again to recalculate height
 		this.popup.clip();
@@ -232,36 +243,20 @@
 		this.popup.toggle();
 	};
 
-	// Client-side version of NotificationController::getCappedNotificationCount.
-	/**
-	 * Gets the count to use for display
-	 *
-	 * @param {number} count Count before cap is applied
-	 *
-	 * @return {number} Count with cap applied
-	 */
-	mw.echo.ui.NotificationBadgeWidget.prototype.getCappedNotificationCount = function ( count ) {
-		if ( count <= this.maxNotificationCount ) {
-			return count;
-		} else {
-			return this.maxNotificationCount + 1;
-		}
-	};
-
 	/**
 	 * Respond to SeenTime model update event
 	 */
 	mw.echo.ui.NotificationBadgeWidget.prototype.onSeenTimeModelUpdate = function () {
-		this.updateBadgeSeenState( this.manager.hasUnseenInSource( 'local' ) );
+		this.updateBadgeSeenState( false );
 	};
 
 	/**
 	 * Update the badge style to match whether it contains unseen notifications.
 	 *
-	 * @param {boolean} hasUnseen There are unseen notifications
+	 * @param {boolean} [hasUnseen=false] There are unseen notifications
 	 */
 	mw.echo.ui.NotificationBadgeWidget.prototype.updateBadgeSeenState = function ( hasUnseen ) {
-		hasUnseen = hasUnseen === undefined ? this.manager.hasUnseenInSource( 'local' ) : !!hasUnseen;
+		hasUnseen = hasUnseen === undefined ? false : !!hasUnseen;
 
 		this.badgeButton.setFlags( { unseen: !!hasUnseen } );
 	};
@@ -273,9 +268,9 @@
 		var unreadCount, cappedUnreadCount, badgeLabel;
 
 		unreadCount = this.manager.getUnreadCounter().getCount();
-		cappedUnreadCount = this.getCappedNotificationCount( unreadCount );
+		cappedUnreadCount = this.manager.getUnreadCounter().getCappedNotificationCount( unreadCount );
 		cappedUnreadCount = mw.language.convertNumber( cappedUnreadCount );
-		badgeLabel = mw.message( 'echo-badge-count', cappedUnreadCount ).text();
+		badgeLabel = mw.message( 'echo-badge-count', mw.language.convertNumber( cappedUnreadCount ) ).text();
 
 		this.badgeButton.setLabel( badgeLabel );
 		this.badgeButton.setCount( unreadCount, badgeLabel );
@@ -308,6 +303,7 @@
 	/**
 	 * Extend the response to button click so we can also update the notification list.
 	 *
+	 * @param {boolean} isVisible The popup is visible
 	 * @fires finishLoading
 	 */
 	mw.echo.ui.NotificationBadgeWidget.prototype.onPopupToggle = function ( isVisible ) {
@@ -351,9 +347,11 @@
 				// Success
 				function () {
 					if ( widget.popup.isVisible() ) {
-						widget.popup.clip();
+						// Fire initialization hook
+						mw.hook( 'ext.echo.popup.onInitialize' ).fire( widget.manager.getTypeString(), widget.controller );
+
 						// Update seen time
-						return widget.controller.updateLocalSeenTime();
+						return widget.controller.updateSeenTime();
 					}
 				},
 				// Failure
@@ -369,10 +367,11 @@
 			)
 			.then( this.emit.bind( this, 'finishLoading' ) )
 			.always( function () {
+				widget.popup.clip();
 				// Pop pending
 				widget.popPending();
 				widget.promiseRunning = false;
 			} );
 		this.hasRunFirstTime = true;
 	};
-} )( mediaWiki, jQuery );
+}( mediaWiki, jQuery ) );

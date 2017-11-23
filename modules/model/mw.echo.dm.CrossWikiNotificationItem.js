@@ -20,6 +20,7 @@
 		this.foreign = true;
 		this.source = null;
 		this.count = config.count || 0;
+		this.modelName = config.modelName || 'xwiki';
 
 		this.list = new mw.echo.dm.NotificationGroupsList();
 
@@ -118,6 +119,21 @@
 	};
 
 	/**
+	 * Set all notifications in all groups to seen
+	 *
+	 * @param {number} timestamp New seen timestamp
+	 */
+	mw.echo.dm.CrossWikiNotificationItem.prototype.updateSeenState = function ( timestamp ) {
+		this.getList().getItems().forEach( function ( source ) {
+			source.getItems().forEach( function ( notification ) {
+				notification.toggleSeen(
+					notification.isRead() || notification.getTimestamp() < timestamp
+				);
+			} );
+		} );
+	};
+
+	/**
 	 * Get all items in the cross wiki notification bundle
 	 *
 	 * @return {mw.echo.dm.NotificationItem[]} All items across all sources
@@ -146,4 +162,4 @@
 		return this.getList().isEmpty();
 	};
 
-} )( mediaWiki );
+}( mediaWiki ) );

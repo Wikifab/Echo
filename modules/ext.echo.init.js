@@ -14,7 +14,7 @@
 	mw.echo.config.maxPrioritizedActions = 2;
 
 	// Activate ooui
-	$( document ).ready( function () {
+	$( function () {
 		var myWidget, echoApi,
 			$existingAlertLink = $( '#pt-notifications-alert a' ),
 			$existingMessageLink = $( '#pt-notifications-notice a' ),
@@ -66,13 +66,7 @@
 				if ( $existingMessageLink.length ) {
 					unreadMessageCounter = new mw.echo.dm.UnreadNotificationCounter( echoApi, 'message', maxNotificationCount );
 					messageModelManager = new mw.echo.dm.ModelManager( unreadMessageCounter, { type: 'message' } );
-					messageController = new mw.echo.Controller(
-						echoApi,
-						messageModelManager,
-						{
-							type: [ 'message' ]
-						}
-					);
+					messageController = new mw.echo.Controller( echoApi, messageModelManager );
 
 					mw.echo.ui.messageWidget = new mw.echo.ui.NotificationBadgeWidget(
 						messageController,
@@ -87,20 +81,12 @@
 							href: $existingMessageLink.attr( 'href' )
 						}
 					);
-					// HACK: avoid late debouncedUpdateThemeClasses
-					mw.echo.ui.messageWidget.badgeButton.debouncedUpdateThemeClasses();
 					// Replace the link button with the ooui button
 					$existingMessageLink.parent().replaceWith( mw.echo.ui.messageWidget.$element );
 				}
 				unreadAlertCounter = new mw.echo.dm.UnreadNotificationCounter( echoApi, 'alert', maxNotificationCount );
 				alertModelManager = new mw.echo.dm.ModelManager( unreadAlertCounter, { type: 'alert' } );
-				alertController = new mw.echo.Controller(
-					echoApi,
-					alertModelManager,
-					{
-						type: [ 'alert' ]
-					}
-				);
+				alertController = new mw.echo.Controller( echoApi, alertModelManager );
 
 				mw.echo.ui.alertWidget = new mw.echo.ui.NotificationBadgeWidget(
 					alertController,
@@ -123,8 +109,6 @@
 						.text( mw.msg( 'mytalk' ) );
 				} );
 
-				// HACK: avoid late debouncedUpdateThemeClasses
-				mw.echo.ui.alertWidget.badgeButton.debouncedUpdateThemeClasses();
 				// Replace the link button with the ooui button
 				$existingAlertLink.parent().replaceWith( mw.echo.ui.alertWidget.$element );
 
@@ -148,4 +132,4 @@
 		} );
 	} );
 
-} )( mediaWiki, jQuery );
+}( mediaWiki, jQuery ) );
