@@ -805,7 +805,9 @@ class EchoHooks {
 			$user = $wgUser;
 		}
 
-		$revid = $linksUpdate->getRevision() ? $linksUpdate->getRevision()->getId() : null;
+		// method $linksUpdate->getRevision() do not exists anymore
+		//$revid = $linksUpdate->getRevision() ? $linksUpdate->getRevision()->getId() : null;
+		$revid = null;
 
 		// link notification is boundless as you can include infinite number of links in a page
 		// db insert is expensive, limit it to a reasonable amount, we can increase this limit
@@ -1138,8 +1140,13 @@ class EchoHooks {
 		return true;
 	}
 
-	public static function onOutputPageCheckLastModified( array &$modifiedTimes, OutputPage $out ) {
-		$user = $out->getUser();
+	public static function onOutputPageCheckLastModified( array &$modifiedTimes, $out = null) {
+		global $wgUser;
+		if(!$out) {
+			$user = $wgUser;
+		} else {
+			$user = $out->getUser();
+		}
 		if ( $user->isLoggedIn() ) {
 			$notifUser = MWEchoNotifUser::newFromUser( $user );
 			$lastUpdate = $notifUser->getGlobalUpdateTime();
